@@ -5,8 +5,6 @@ type NotificationStatus string
 const (
 	StatusPending    NotificationStatus = "pending"
 	StatusProcessing NotificationStatus = "processing"
-	StatusCompleted  NotificationStatus = "completed"
-	StatusFailed     NotificationStatus = "failed"
 )
 
 type NotificationType string
