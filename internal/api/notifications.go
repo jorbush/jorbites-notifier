@@ -63,7 +63,6 @@ func (h *NotificationHandler) GetQueueStatus(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
 		log.Printf("Error encoding response: %v", err)
