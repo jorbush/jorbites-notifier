@@ -97,7 +97,7 @@ Returns the current status of the notification queue.
       "id": "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d",
       "type": "NEW_LIKE",
       "status": "pending",
-      "recipient": "another@example.com",
+      "recipient": "user2@example.com",
       "metadata": {
         "likedBy": "User2",
         "recipeId": "67890"
