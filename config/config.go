@@ -6,26 +6,20 @@ import (
 )
 
 type Config struct {
-	Port            string
-	SMTPHost        string
-	SMTPPort        int
-	SMTPUser        string
-	SMTPPassword    string
-	WorkerCount     int
-	RetryAttempts   int
-	RetryDelayInSec int
+	Port         string
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUser     string
+	SMTPPassword string
 }
 
 func GetConfig() *Config {
 	return &Config{
-		Port:            getEnvOrDefault("PORT", "8080"),
-		SMTPHost:        getEnvOrDefault("SMTP_HOST", "smtp.gmail.com"),
-		SMTPPort:        getEnvAsIntOrDefault("SMTP_PORT", 587),
-		SMTPUser:        os.Getenv("SMTP_USER"),
-		SMTPPassword:    os.Getenv("SMTP_PASSWORD"),
-		WorkerCount:     getEnvAsIntOrDefault("WORKER_COUNT", 3),
-		RetryAttempts:   getEnvAsIntOrDefault("RETRY_ATTEMPTS", 3),
-		RetryDelayInSec: getEnvAsIntOrDefault("RETRY_DELAY", 60),
+		Port:         getEnvOrDefault("PORT", "8080"),
+		SMTPHost:     getEnvOrDefault("SMTP_HOST", "smtp.gmail.com"),
+		SMTPPort:     getEnvAsIntOrDefault("SMTP_PORT", 587),
+		SMTPUser:     os.Getenv("SMTP_USER"),
+		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
 	}
 }
 
