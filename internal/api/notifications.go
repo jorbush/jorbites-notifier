@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/jorbush/jorbites-notifier/internal/models"
@@ -40,7 +41,12 @@ func (h *NotificationHandler) EnqueueNotification(w http.ResponseWriter, r *http
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(notification)
+	err = json.NewEncoder(w).Encode(notification)
+	if err != nil {
+		log.Printf("Error encoding notification: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *NotificationHandler) GetQueueStatus(w http.ResponseWriter, r *http.Request) {
@@ -58,4 +64,10 @@ func (h *NotificationHandler) GetQueueStatus(w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
