@@ -1,6 +1,7 @@
 # Jorbites Notifier Documentation
 
-Welcome to the Jorbites Notifier documentation. This documentation provides details on how to use and understand the Jorbites notification service.
+Welcome to the Jorbites Notifier documentation.
+This documentation provides details on how to use and understand the Jorbites notification service.
 
 ## Table of Contents
 

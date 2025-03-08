@@ -23,9 +23,11 @@ jobs:
         run: |
           git clone https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.wiki.git wiki
 
-      - name: Push changes to Wiki
+      - name: Sync Docs to Wiki
         run: |
-          cd wiki
+          cp -r docs/* wiki/
+          ls -la wiki/
+          git status
           git add .
           git commit -m "Sync docs to wiki" || echo "No changes to commit"
           git push origin master
