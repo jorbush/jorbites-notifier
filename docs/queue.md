@@ -29,10 +29,3 @@ The queue status can be checked via the API at any time. It provides:
 |--------|-------------|
 | `pending` | Notification is waiting in the queue to be processed |
 | `processing` | Notification is currently being processed |
-
-## Future Improvements
-
-- **Persistence**: Store the queue in a database to survive service restarts
-- **Retry Mechanism**: Implement automatic retry for failed notifications
-- **Multiple Workers**: Add support for parallel processing with multiple workers
-- **Prioritization**: Add priority levels for different notification types
