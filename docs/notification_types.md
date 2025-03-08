@@ -52,8 +52,6 @@ Sent when a user publishes a new recipe.
 
 **Metadata Fields**:
 - `recipeId`: ID of the new recipe
-- `recipeName`: Name of the recipe
-- `authorName`: Name of the recipe author
 
 **Example**:
 ```json
@@ -62,8 +60,6 @@ Sent when a user publishes a new recipe.
   "recipient": "user@example.com",
   "metadata": {
     "recipeId": "67890",
-    "recipeName": "Delicious Pasta",
-    "authorName": "User3"
   }
 }
 ```

@@ -21,11 +21,10 @@ jobs:
 
       - name: Clone Wiki with Authentication
         run: |
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git wiki
+          git clone https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.wiki.git wiki
 
-      - name: Sync Docs to Wiki
+      - name: Push changes to Wiki
         run: |
-          cp -r docs/* wiki/
           cd wiki
           git add .
           git commit -m "Sync docs to wiki" || echo "No changes to commit"
