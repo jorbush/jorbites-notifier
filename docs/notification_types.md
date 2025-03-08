@@ -72,19 +72,11 @@ Sent when a user publishes a new recipe.
 
 Sent when a user activates notifications for their account.
 
-**Metadata Fields**:
-- `userId`: ID of the user
-- `activationDate`: Date when notifications were activated
-
 **Example**:
 ```json
 {
   "type": "NOTIFICATIONS_ACTIVED",
-  "recipient": "user@example.com",
-  "metadata": {
-    "userId": "12345",
-    "activationDate": "2025-03-08T12:00:00Z"
-  }
+  "recipient": "user@example.com"
 }
 ```
 
