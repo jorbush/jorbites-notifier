@@ -11,19 +11,22 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Configure Git
+      - name: Setup Git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "github-actions"
 
-      - name: Clone Wiki
+      - name: Clone Wiki with Authentication
         run: |
-          git clone https://github.com/${{ github.repository }}.wiki.git wiki
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git wiki
+
+      - name: Sync Docs to Wiki
+        run: |
           cp -r docs/* wiki/
           cd wiki
           git add .
           git commit -m "Sync docs to wiki" || echo "No changes to commit"
-          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git || echo "Push failed"
+          git push origin main

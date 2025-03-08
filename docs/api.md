@@ -100,7 +100,7 @@ Returns the current status of the notification queue.
       "recipient": "another@example.com",
       "metadata": {
         "likedBy": "User2",
-        "recipeId": "67890"
+        "recipeId": "67891"
       }
     }
   ]
