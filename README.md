@@ -46,3 +46,7 @@ make docker
 ## Documentation
 
 For detailed documentation, check the [docs](./docs) directory.
+
+## Testing
+
+_TODO_
