@@ -12,7 +12,6 @@ const (
 
 func RequireAPIKey(next http.HandlerFunc) http.HandlerFunc {
 	apiKey := os.Getenv("API_KEY")
-	log.Print(apiKey)
 	if apiKey == "" {
 		log.Fatal("API_KEY environment variable is not set")
 	}
