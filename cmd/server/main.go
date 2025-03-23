@@ -7,6 +7,7 @@ import (
 
 	"github.com/jorbush/jorbites-notifier/config"
 	"github.com/jorbush/jorbites-notifier/internal/api"
+	"github.com/jorbush/jorbites-notifier/internal/middleware"
 	"github.com/jorbush/jorbites-notifier/internal/queue"
 )
 
@@ -21,8 +22,8 @@ func main() {
 	notificationHandler := api.NewNotificationHandler(notificationQueue)
 
 	mux.HandleFunc("/health", api.HealthCheckHandler)
-	mux.HandleFunc("/notifications", notificationHandler.EnqueueNotification)
-	mux.HandleFunc("/queue", notificationHandler.GetQueueStatus)
+	mux.HandleFunc("/notifications", middleware.RequireAPIKey(notificationHandler.EnqueueNotification))
+	mux.HandleFunc("/queue", middleware.RequireAPIKey(notificationHandler.GetQueueStatus))
 
 	log.Printf("Starting server on port %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, mux); err != nil {

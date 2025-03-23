@@ -19,8 +19,6 @@ WORKDIR /app
 
 COPY --from=builder /app/server .
 
-# Exponer el puerto
 EXPOSE 8080
 
-# Ejecutar la aplicación
 CMD ["./server"]

@@ -8,3 +8,4 @@ Welcome to the Jorbites Notifier documentation. This documentation provides deta
 - [API Reference](./api.md): Details about the REST API endpoints
 - [Queue System](./queue.md): How the notification queue works
 - [Notification Types](./notification_types.md): Supported notification types
+- [Security](./security.md): Security measures implemented in the service
