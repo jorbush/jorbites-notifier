@@ -9,3 +9,4 @@ Welcome to the Jorbites Notifier documentation. This documentation provides deta
 - [Queue System](./queue.md): How the notification queue works
 - [Notification Types](./notification_types.md): Supported notification types
 - [Security](./security.md): Security measures implemented in the service
+- [Email Service](./email.md): Details about the email notification service
