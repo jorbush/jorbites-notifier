@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jorbush/jorbites-notifier/config"
+	"github.com/jorbush/jorbites-notifier/internal/email"
 	"github.com/jorbush/jorbites-notifier/internal/models"
 )
 
@@ -14,13 +16,16 @@ type Queue struct {
 	mutex         sync.Mutex
 	processing    bool
 	notifyChan    chan struct{}
+	emailSender   *email.EmailSender
 }
 
 func NewQueue() *Queue {
+	cfg := config.GetConfig()
 	return &Queue{
 		notifications: []models.Notification{},
 		notifyChan:    make(chan struct{}, 1),
 		processing:    false,
+		emailSender:   email.NewEmailSender(cfg),
 	}
 }
 
@@ -86,11 +91,12 @@ func (q *Queue) processNextNotification() {
 
 	notification := q.notifications[0]
 	notification.Status = models.StatusProcessing
+	q.notifications[0] = notification
 	q.mutex.Unlock()
 
 	log.Printf("Processing notification %s of type %s", notification.ID, notification.Type)
 
-	success := processNotificationByType(notification)
+	success := q.processNotificationByType(notification)
 
 	log.Printf("Notification %s processed with success: %t", notification.ID, success)
 
@@ -103,29 +109,17 @@ func (q *Queue) processNextNotification() {
 	}
 }
 
-func processNotificationByType(notification models.Notification) bool {
-	time.Sleep(500 * time.Millisecond)
-
+func (q *Queue) processNotificationByType(notification models.Notification) bool {
 	switch notification.Type {
-	case models.TypeNewComment:
-		return sendEmailNotification(notification)
-	case models.TypeNewLike:
-		return sendEmailNotification(notification)
-	case models.TypeNewRecipe:
-		return sendEmailNotification(notification)
-	case models.TypeNotificationsActived:
-		return sendEmailNotification(notification)
+	case models.TypeNewComment, models.TypeNewLike, models.TypeNewRecipe, models.TypeNotificationsActived:
+		success, err := q.emailSender.SendNotificationEmail(notification)
+		if err != nil {
+			log.Printf("Error sending email for notification %s: %v", notification.ID, err)
+			return false
+		}
+		return success
 	default:
 		log.Printf("Unknown notification type: %s", notification.Type)
 		return false
 	}
-}
-
-func sendEmailNotification(notification models.Notification) bool {
-	// TODO: Implement email sending
-	log.Printf("Sending email notification to %s for type %s",
-		notification.Recipient, notification.Type)
-	// simulate processing time
-	time.Sleep(3000 * time.Millisecond)
-	return true
 }
