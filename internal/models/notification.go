@@ -10,10 +10,10 @@ const (
 type NotificationType string
 
 const (
-	TypeNewComment           NotificationType = "NEW_COMMENT"
-	TypeNewLike              NotificationType = "NEW_LIKE"
-	TypeNewRecipe            NotificationType = "NEW_RECIPE"
-	TypeNotificationsActived NotificationType = "NOTIFICATIONS_ACTIVED"
+	TypeNewComment             NotificationType = "NEW_COMMENT"
+	TypeNewLike                NotificationType = "NEW_LIKE"
+	TypeNewRecipe              NotificationType = "NEW_RECIPE"
+	TypeNotificationsActivated NotificationType = "NOTIFICATIONS_ACTIVATED"
 )
 
 type Notification struct {

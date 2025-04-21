@@ -64,14 +64,14 @@ Sent when a user publishes a new recipe.
 }
 ```
 
-### NOTIFICATIONS_ACTIVED
+### NOTIFICATIONS_ACTIVATED
 
 Sent when a user activates notifications for their account.
 
 **Example**:
 ```json
 {
-  "type": "NOTIFICATIONS_ACTIVED",
+  "type": "NOTIFICATIONS_ACTIVATED",
   "recipient": "user@example.com"
 }
 ```

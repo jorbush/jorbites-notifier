@@ -40,7 +40,7 @@ Templates use Go's built-in `text/template` package for variable substitution an
 1. **NEW_COMMENT**: Sent when a user comments on a recipe
 2. **NEW_LIKE**: Sent when a user likes a recipe
 3. **NEW_RECIPE**: Sent when a new recipe is published
-4. **NOTIFICATIONS_ACTIVED**: Sent when a user activates notifications
+4. **NOTIFICATIONS_ACTIVATED**: Sent when a user activates notifications
 
 Each notification type has its own subject line and body content, while maintaining the consistent header and footer.
 
