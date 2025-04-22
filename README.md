@@ -2,6 +2,8 @@
 
 A lightweight notification service for Jorbites platform written in Go.
 
+![Jorbites Notifier](./docs/assets/notifier_logo_no_bg.png)
+
 ## Overview
 
 Jorbites Notifier is a microservice designed to handle notifications for the Jorbites platform. It provides a simple FIFO queue for processing notifications and supports email delivery.

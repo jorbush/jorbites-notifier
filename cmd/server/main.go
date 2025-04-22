@@ -17,7 +17,7 @@ func main() {
 	log.Println("Starting jorbites-notifier service")
 
 	mux := http.NewServeMux()
-	notificationQueue := queue.NewQueue()
+	notificationQueue := queue.NewQueue(cfg)
 	notificationQueue.StartProcessing()
 	notificationHandler := api.NewNotificationHandler(notificationQueue)
 

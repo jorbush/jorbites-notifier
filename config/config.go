@@ -11,6 +11,8 @@ type Config struct {
 	SMTPPort     int
 	SMTPUser     string
 	SMTPPassword string
+	MongoURI     string
+	MongoDB      string
 }
 
 func GetConfig() *Config {
@@ -20,6 +22,8 @@ func GetConfig() *Config {
 		SMTPPort:     getEnvAsIntOrDefault("SMTP_PORT", 587),
 		SMTPUser:     os.Getenv("SMTP_USER"),
 		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
+		MongoURI:     getEnvOrDefault("MONGO_URI", "mongodb://localhost:27017"),
+		MongoDB:      getEnvOrDefault("MONGO_DB", "jorbites"),
 	}
 }
 
