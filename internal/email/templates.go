@@ -111,6 +111,14 @@ var templateContent = map[models.NotificationType]string{
             <li>New recipes from your favorite chefs</li>
         </ul>
     `,
+	models.TypeForgotPassword: `
+    	<h2>Password Reset</h2>
+  		<p>Hi there,</p>
+  		<p>You have requested to reset your password. Click on the following link to create a new password:</p>
+  		<a href="{{.Metadata.resetUrl}}" class="button">Reset Password</a>
+    	<p>This link will expire in 1 hour.</p>
+        <p>If you did not request this change, you can ignore this email.</p>
+    `,
 }
 
 var emailSubjects = map[models.NotificationType]string{
@@ -118,6 +126,7 @@ var emailSubjects = map[models.NotificationType]string{
 	models.TypeNewLike:                "New Like on Your Recipe - Jorbites",
 	models.TypeNewRecipe:              "New Recipe Available - Jorbites",
 	models.TypeNotificationsActivated: "Welcome to Jorbites Notifications",
+	models.TypeForgotPassword:         "Password Reset Request - Jorbites",
 }
 
 type TemplateData struct {

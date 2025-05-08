@@ -14,6 +14,7 @@ const (
 	TypeNewLike                NotificationType = "NEW_LIKE"
 	TypeNewRecipe              NotificationType = "NEW_RECIPE"
 	TypeNotificationsActivated NotificationType = "NOTIFICATIONS_ACTIVATED"
+	TypeForgotPassword         NotificationType = "FORGOT_PASSWORD"
 )
 
 type Notification struct {

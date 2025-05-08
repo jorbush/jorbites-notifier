@@ -121,7 +121,7 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 	switch notification.Type {
 	case models.TypeNewRecipe:
 		return q.processNewRecipeNotification(notification)
-	case models.TypeNewComment, models.TypeNewLike, models.TypeNotificationsActivated:
+	case models.TypeNewComment, models.TypeNewLike, models.TypeNotificationsActivated, models.TypeForgotPassword:
 		success, err := q.emailSender.SendNotificationEmail(notification)
 		if err != nil {
 			log.Printf("Error sending email for notification %s: %v", notification.ID, err)

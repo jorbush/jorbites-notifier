@@ -76,6 +76,21 @@ Sent when a user activates notifications for their account.
 }
 ```
 
+### FORGOT_PASSWORD
+
+Sent when a user requests a password reset.
+
+**Example**:
+```json
+{
+  "type": "FORGOT_PASSWORD",
+  "recipient": "user@example.com",
+  "metadata": {
+    "resetUrl": "https://example.com/reset-password?token=abc123"
+  }
+}
+```
+
 ## Adding New Notification Types
 
 To add a new notification type:
