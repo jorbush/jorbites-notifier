@@ -119,6 +119,13 @@ var templateContent = map[models.NotificationType]string{
     	<p>This link will expire in 1 hour.</p>
         <p>If you did not request this change, you can ignore this email.</p>
     `,
+	models.TypeMentionInComment: `
+    	<h2>You were mentioned in a comment!</h2>
+  		<p>Hi there,</p>
+    	<p><strong>{{.Metadata.authorName}}</strong> mentioned you in a comment on a recipe.</p>
+    	<p>Click the button below to view the recipe:</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">View Recipe</a>
+    `,
 }
 
 var emailSubjects = map[models.NotificationType]string{
@@ -127,6 +134,7 @@ var emailSubjects = map[models.NotificationType]string{
 	models.TypeNewRecipe:              "New Recipe Available - Jorbites",
 	models.TypeNotificationsActivated: "Welcome to Jorbites Notifications",
 	models.TypeForgotPassword:         "Password Reset Request - Jorbites",
+	models.TypeMentionInComment:       "You Were Mentioned in a Comment - Jorbites",
 }
 
 type TemplateData struct {

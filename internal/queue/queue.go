@@ -128,6 +128,8 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 			return false
 		}
 		return success
+	case models.TypeMentionInComment:
+		return q.processMentionInCommentNotification(notification)
 	default:
 		log.Printf("Unknown notification type: %s", notification.Type)
 		return false
@@ -176,5 +178,49 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 	}
 
 	log.Printf("New recipe notification results: %d successful, %d failed", successCount, failCount)
+	return successCount > 0
+}
+
+func (q *Queue) processMentionInCommentNotification(notification models.Notification) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	users, err := q.mongoDB.GetUsersMentionedInComment(ctx, notification.Metadata["mentionedUsers"], notification.Recipient)
+	if err != nil {
+		log.Printf("Error fetching users for mention notification %s: %v", notification.ID, err)
+		return false
+	}
+
+	log.Printf("Sending mention in comment notification to %d users", len(users))
+
+	successCount := 0
+	failCount := 0
+
+	for _, user := range users {
+		userNotification := models.Notification{
+			ID:        uuid.New().String(),
+			Type:      notification.Type,
+			Status:    models.StatusProcessing,
+			Recipient: user.Email,
+			Metadata:  notification.Metadata,
+		}
+
+		success, err := q.emailSender.SendNotificationEmail(userNotification)
+		if err != nil {
+			log.Printf("Error sending email to %s: %v", user.Email, err)
+			failCount++
+			continue
+		}
+
+		if success {
+			successCount++
+		} else {
+			failCount++
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	log.Printf("Mention in comment notification results: %d successful, %d failed", successCount, failCount)
 	return successCount > 0
 }

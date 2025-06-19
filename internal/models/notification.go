@@ -15,6 +15,7 @@ const (
 	TypeNewRecipe              NotificationType = "NEW_RECIPE"
 	TypeNotificationsActivated NotificationType = "NOTIFICATIONS_ACTIVATED"
 	TypeForgotPassword         NotificationType = "FORGOT_PASSWORD"
+	TypeMentionInComment       NotificationType = "MENTION_IN_COMMENT"
 )
 
 type Notification struct {

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/jorbush/jorbites-notifier/config"
 	"github.com/jorbush/jorbites-notifier/internal/models"
@@ -53,5 +54,42 @@ func (m *MongoDB) GetUsersWithNotificationsEnabled(ctx context.Context) ([]model
 	}
 
 	log.Printf("Found %d users with email notifications enabled", len(users))
+	return users, nil
+}
+
+func (m *MongoDB) GetUsersMentionedInComment(ctx context.Context, mentionedUsersIds string, recipientEmail string) ([]models.User, error) {
+	collection := m.db.Collection("User")
+	mentionedUserIdsArray := strings.Split(mentionedUsersIds, ",")
+	var objectIds []bson.ObjectID
+	for _, idStr := range mentionedUserIdsArray {
+		objectId, err := bson.ObjectIDFromHex(idStr)
+		if err != nil {
+			log.Printf("Invalid ObjectID: %s, error: %v", idStr, err)
+			continue // Skip invalid IDs
+		}
+		objectIds = append(objectIds, objectId)
+	}
+	if len(objectIds) == 0 {
+		log.Printf("No valid ObjectIDs found")
+		return []models.User{}, nil
+	}
+	filter := bson.D{
+		{Key: "_id", Value: bson.D{{Key: "$in", Value: objectIds}}},
+		{Key: "emailNotifications", Value: true},
+		{Key: "email", Value: bson.D{{Key: "$ne", Value: recipientEmail}}},
+	}
+
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var users []models.User
+	if err = cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+
+	log.Printf("Found %d users with email notifications enabled and mentioned in comment", len(users))
 	return users, nil
 }

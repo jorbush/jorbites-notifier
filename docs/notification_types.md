@@ -91,6 +91,27 @@ Sent when a user requests a password reset.
 }
 ```
 
+### MENTION_IN_COMMENT
+
+Sent when a user is mentioned in a comment.
+
+**Metadata Fields**:
+- `mentionedUsers`: List of users ids mentioned in the comment (string with comma-separated values).
+- `authorName`: Name of the comment author
+- `recipeId`: ID of the recipe that was commented on
+**Example**:
+```json
+{
+  "type": "MENTION_IN_COMMENT",
+  "recipient": "user@example.com",
+  "metadata": {
+    "mentionedUsers": "user1,user2",
+    "authorName": "User3",
+    "recipeId": "67890"
+  }
+}
+```
+
 ## Adding New Notification Types
 
 To add a new notification type:
