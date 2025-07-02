@@ -26,11 +26,8 @@ Jorbites Notifier is a microservice designed to handle notifications for the Jor
 ## Running the service
 
 ```bash
-# Install dependencies
-go mod tidy
-
-# Run the service
-go run cmd/server/main.go
+go mod tidy # Install dependencies
+go run cmd/server/main.go # Run the service
 ```
 
 Or using the Makefile:
