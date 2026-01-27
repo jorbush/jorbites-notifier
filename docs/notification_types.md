@@ -112,10 +112,28 @@ Sent when a user is mentioned in a comment.
 }
 ```
 
+### NEW_BLOG
+
+Sent when a new blog post is published.
+
+**Metadata Fields**:
+- `blog_id`: ID of the new blog post
+
+**Example**:
+```json
+{
+  "type": "NEW_BLOG",
+  "metadata": {
+    "blog_id": "blog-123"
+  }
+}
+```
+
 ## Adding New Notification Types
 
 To add a new notification type:
 
 1. Add the type constant in `models/notification.go`
-2. Implement the processing logic for the new type in `queue.processNotificationByType()`
-3. Update this documentation with details about the new type
+2. Implement the processing logic for the new type in `queue.processNotificationByType()` and its corresponding method.
+3. Add the new type to the `email.templates.go` file.
+4. Update this documentation with details about the new type.
