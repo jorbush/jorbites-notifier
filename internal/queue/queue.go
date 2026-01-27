@@ -121,6 +121,8 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 	switch notification.Type {
 	case models.TypeNewRecipe:
 		return q.processNewRecipeNotification(notification)
+	case models.TypeNewBlog:
+		return q.processNewBlogNotification(notification)
 	case models.TypeNewComment, models.TypeNewLike, models.TypeNotificationsActivated, models.TypeForgotPassword:
 		success, err := q.emailSender.SendNotificationEmail(notification)
 		if err != nil {
@@ -222,5 +224,49 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 	}
 
 	log.Printf("Mention in comment notification results: %d successful, %d failed", successCount, failCount)
+	return successCount > 0
+}
+
+func (q *Queue) processNewBlogNotification(notification models.Notification) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
+	if err != nil {
+		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		return false
+	}
+
+	log.Printf("Sending new blog notification to %d users with notifications enabled", len(users))
+
+	successCount := 0
+	failCount := 0
+
+	for _, user := range users {
+		userNotification := models.Notification{
+			ID:        uuid.New().String(),
+			Type:      notification.Type,
+			Status:    models.StatusProcessing,
+			Recipient: user.Email,
+			Metadata:  notification.Metadata,
+		}
+
+		success, err := q.emailSender.SendNotificationEmail(userNotification)
+		if err != nil {
+			log.Printf("Error sending email to %s: %v", user.Email, err)
+			failCount++
+			continue
+		}
+
+		if success {
+			successCount++
+		} else {
+			failCount++
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	log.Printf("New blog notification results: %d successful, %d failed", successCount, failCount)
 	return successCount > 0
 }

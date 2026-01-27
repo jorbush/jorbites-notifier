@@ -126,6 +126,12 @@ var templateContent = map[models.NotificationType]string{
     	<p>Click the button below to view the recipe:</p>
         <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">View Recipe</a>
     `,
+	models.TypeNewBlog: `
+		<h2>New Blog Post! 📝</h2>
+		<p>Hi there,</p>
+		<p>A new blog post has been published on Jorbites!</p>
+		<a href="{{.SiteURL}}/blog/{{.Metadata.blog_id}}" class="button">Read it now</a>
+	`,
 }
 
 var emailSubjects = map[models.NotificationType]string{
@@ -135,6 +141,7 @@ var emailSubjects = map[models.NotificationType]string{
 	models.TypeNotificationsActivated: "Welcome to Jorbites Notifications",
 	models.TypeForgotPassword:         "Password Reset Request - Jorbites",
 	models.TypeMentionInComment:       "You Were Mentioned in a Comment - Jorbites",
+	models.TypeNewBlog:                "New Blog Post Available - Jorbites",
 }
 
 type TemplateData struct {
