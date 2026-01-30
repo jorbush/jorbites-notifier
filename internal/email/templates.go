@@ -16,50 +16,76 @@ const BaseTemplate = `
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jorbites Notification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Nunito', Arial, sans-serif;
             line-height: 1.6;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background-color: #f8f9fa; /* Lighter background */
+            color: #2d3748; /* Dark gray for better readability */
         }
         .container {
             max-width: 600px;
-            margin: 20px auto;
+            margin: 40px auto;
             background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 40px;
         }
         .header {
             text-align: center;
-            padding: 20px 0;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #edf2f7;
+            margin-bottom: 30px;
         }
         .logo {
-            max-width: 150px;
+            max-width: 140px;
             height: auto;
         }
         .content {
-            padding: 20px;
-            color: #333333;
+            padding: 0;
+            color: #4a5568;
+            font-size: 16px;
+        }
+        h2 {
+            color: #1a202c;
+            font-weight: 700;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 1.5em;
         }
         .footer {
             text-align: center;
-            padding: 20px;
-            color: #666666;
+            padding-top: 30px;
+            color: #a0aec0;
             font-size: 12px;
-            border-top: 1px solid #eeeeee;
-            margin-top: 20px;
+            border-top: 1px solid #edf2f7;
+            margin-top: 40px;
+        }
+        .footer a {
+            color: #718096;
+            text-decoration: underline;
         }
         .button {
             display: inline-block;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
+            padding: 12px 24px;
+            background-color: #C5F0A4; /* App main color */
+            color: #1a202c !important; /* Dark text for contrast */
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 6px;
+            font-weight: 700;
             margin: 20px 0;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .button:hover {
+            background-color: #b2d892; /* Slightly darker for hover */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
     </style>
 </head>
