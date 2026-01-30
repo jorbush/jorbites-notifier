@@ -19,88 +19,19 @@ const BaseTemplate = `
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Nunito', Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa; /* Lighter background */
-            color: #2d3748; /* Dark gray for better readability */
-        }
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            padding: 40px;
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 30px;
-            border-bottom: 1px solid #edf2f7;
-            margin-bottom: 30px;
-        }
-        .logo {
-            max-width: 140px;
-            height: auto;
-        }
-        .content {
-            padding: 0;
-            color: #4a5568;
-            font-size: 16px;
-        }
-        h2 {
-            color: #1a202c;
-            font-weight: 700;
-            margin-top: 0;
-        }
-        p {
-            margin-bottom: 1.5em;
-        }
-        .footer {
-            text-align: center;
-            padding-top: 30px;
-            color: #a0aec0;
-            font-size: 12px;
-            border-top: 1px solid #edf2f7;
-            margin-top: 40px;
-        }
-        .footer a {
-            color: #718096;
-            text-decoration: underline;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #C5F0A4; /* App main color */
-            color: #1a202c !important; /* Dark text for contrast */
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 700;
-            margin: 20px 0;
-            transition: background-color 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .button:hover {
-            background-color: #b2d892; /* Slightly darker for hover */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <img src="{{.LogoURL}}" alt="Jorbites Logo" class="logo">
+<body style="font-family: 'Nunito', Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f8f9fa; color: #2d3748;">
+    <div class="container" style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 40px;">
+        <div class="header" style="text-align: center; padding-bottom: 30px; border-bottom: 1px solid #edf2f7; margin-bottom: 30px;">
+            <img src="{{.LogoURL}}" alt="Jorbites Logo" class="logo" style="max-width: 140px; height: auto;">
         </div>
-        <div class="content">
+        <div class="content" style="padding: 0; color: #4a5568; font-size: 16px;">
             {{.Content}}
         </div>
-        <div class="footer">
-            <p>You're receiving this email because you have notifications enabled on Jorbites.</p>
-            <p>To manage your email preferences, go to <a href="{{.SiteURL}}">Settings → Email Notifications</a></p>
-            <p>© {{.CurrentYear}} Jorbites. All rights reserved.</p>
+        <div class="footer" style="text-align: center; padding-top: 30px; color: #a0aec0; font-size: 12px; border-top: 1px solid #edf2f7; margin-top: 40px;">
+            <p style="margin-bottom: 1.5em;">You're receiving this email because you have notifications enabled on Jorbites.</p>
+            <p style="margin-bottom: 1.5em;">To manage your email preferences, go to <a href="{{.SiteURL}}" style="color: #718096; text-decoration: underline;">Settings → Email Notifications</a></p>
+            <p style="margin-bottom: 1.5em;">© {{.CurrentYear}} Jorbites. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -109,28 +40,28 @@ const BaseTemplate = `
 
 var templateContent = map[models.NotificationType]string{
 	models.TypeNewComment: `
-        <h2>You have a new comment!</h2>
-        <p>Hi there,</p>
-        <p><strong>{{.Metadata.authorName}}</strong> has left a comment on your recipe.</p>
-        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">View Comment</a>
+        <h2 style="color: #1a202c; font-weight: 700; margin-top: 0;">You have a new comment!</h2>
+        <p style="margin-bottom: 1.5em;">Hi there,</p>
+        <p style="margin-bottom: 1.5em;"><strong>{{.Metadata.authorName}}</strong> has left a comment on your recipe.</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button" style="display: inline-block; padding: 12px 24px; background-color: #C5F0A4; color: #1a202c !important; text-decoration: none; border-radius: 6px; font-weight: 700; margin: 20px 0; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">View Comment</a>
     `,
 	models.TypeNewLike: `
-        <h2>Someone liked your recipe!</h2>
-        <p>Hi there,</p>
-        <p><strong>{{.Metadata.likedBy}}</strong> has liked your recipe.</p>
-        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">View Recipe</a>
+        <h2 style="color: #1a202c; font-weight: 700; margin-top: 0;">Someone liked your recipe!</h2>
+        <p style="margin-bottom: 1.5em;">Hi there,</p>
+        <p style="margin-bottom: 1.5em;"><strong>{{.Metadata.likedBy}}</strong> has liked your recipe.</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button" style="display: inline-block; padding: 12px 24px; background-color: #C5F0A4; color: #1a202c !important; text-decoration: none; border-radius: 6px; font-weight: 700; margin: 20px 0; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">View Recipe</a>
     `,
 	models.TypeNewRecipe: `
-        <h2>New Recipe Alert! 🍳</h2>
-        <p>Hi there,</p>
-        <p>A new recipe has been posted on Jorbites!</p>
-        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">Check it out</a>
+        <h2 style="color: #1a202c; font-weight: 700; margin-top: 0;">New Recipe Alert! 🍳</h2>
+        <p style="margin-bottom: 1.5em;">Hi there,</p>
+        <p style="margin-bottom: 1.5em;">A new recipe has been posted on Jorbites!</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button" style="display: inline-block; padding: 12px 24px; background-color: #C5F0A4; color: #1a202c !important; text-decoration: none; border-radius: 6px; font-weight: 700; margin: 20px 0; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">Check it out</a>
     `,
 	models.TypeNotificationsActivated: `
-        <h2>Notifications Activated! 🎉</h2>
-        <p>Hi there,</p>
-        <p>You've successfully activated email notifications for Jorbites.</p>
-        <p>You'll now receive updates about:</p>
+        <h2 style="color: #1a202c; font-weight: 700; margin-top: 0;">Notifications Activated! 🎉</h2>
+        <p style="margin-bottom: 1.5em;">Hi there,</p>
+        <p style="margin-bottom: 1.5em;">You've successfully activated email notifications for Jorbites.</p>
+        <p style="margin-bottom: 1.5em;">You'll now receive updates about:</p>
         <ul>
             <li>New comments on your recipes</li>
             <li>Likes on your recipes</li>
@@ -138,25 +69,25 @@ var templateContent = map[models.NotificationType]string{
         </ul>
     `,
 	models.TypeForgotPassword: `
-    	<h2>Password Reset</h2>
-  		<p>Hi there,</p>
-  		<p>You have requested to reset your password. Click on the following link to create a new password:</p>
-  		<a href="{{.Metadata.resetUrl}}" class="button">Reset Password</a>
-    	<p>This link will expire in 1 hour.</p>
-        <p>If you did not request this change, you can ignore this email.</p>
+    	<h2 style="color: #1a202c; font-weight: 700; margin-top: 0;">Password Reset</h2>
+  		<p style="margin-bottom: 1.5em;">Hi there,</p>
+  		<p style="margin-bottom: 1.5em;">You have requested to reset your password. Click on the following link to create a new password:</p>
+  		<a href="{{.Metadata.resetUrl}}" class="button" style="display: inline-block; padding: 12px 24px; background-color: #C5F0A4; color: #1a202c !important; text-decoration: none; border-radius: 6px; font-weight: 700; margin: 20px 0; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">Reset Password</a>
+    	<p style="margin-bottom: 1.5em;">This link will expire in 1 hour.</p>
+        <p style="margin-bottom: 1.5em;">If you did not request this change, you can ignore this email.</p>
     `,
 	models.TypeMentionInComment: `
-    	<h2>You were mentioned in a comment!</h2>
-  		<p>Hi there,</p>
-    	<p><strong>{{.Metadata.authorName}}</strong> mentioned you in a comment on a recipe.</p>
-    	<p>Click the button below to view the recipe:</p>
-        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">View Recipe</a>
+    	<h2 style="color: #1a202c; font-weight: 700; margin-top: 0;">You were mentioned in a comment!</h2>
+  		<p style="margin-bottom: 1.5em;">Hi there,</p>
+    	<p style="margin-bottom: 1.5em;"><strong>{{.Metadata.authorName}}</strong> mentioned you in a comment on a recipe.</p>
+    	<p style="margin-bottom: 1.5em;">Click the button below to view the recipe:</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button" style="display: inline-block; padding: 12px 24px; background-color: #C5F0A4; color: #1a202c !important; text-decoration: none; border-radius: 6px; font-weight: 700; margin: 20px 0; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">View Recipe</a>
     `,
 	models.TypeNewBlog: `
-		<h2>New Blog Post! 📝</h2>
-		<p>Hi there,</p>
-		<p>A new blog post has been published on Jorbites!</p>
-		<a href="{{.SiteURL}}/blog/{{.Metadata.blog_id}}" class="button">Read it now</a>
+		<h2 style="color: #1a202c; font-weight: 700; margin-top: 0;">New Blog Post! 📝</h2>
+		<p style="margin-bottom: 1.5em;">Hi there,</p>
+		<p style="margin-bottom: 1.5em;">A new blog post has been published on Jorbites!</p>
+		<a href="{{.SiteURL}}/blog/{{.Metadata.blog_id}}" class="button" style="display: inline-block; padding: 12px 24px; background-color: #C5F0A4; color: #1a202c !important; text-decoration: none; border-radius: 6px; font-weight: 700; margin: 20px 0; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">Read it now</a>
 	`,
 }
 
