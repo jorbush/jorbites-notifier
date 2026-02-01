@@ -127,25 +127,44 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		return q.processNewRecipeNotification(notification)
 	case models.TypeNewBlog:
 		return q.processNewBlogNotification(notification)
-	case models.TypeNewComment, models.TypeNewLike, models.TypeNotificationsActivated, models.TypeForgotPassword:
-		// 1. Send Email
+	case models.TypeForgotPassword:
+		// 1. Send Email (Transactional - ignore preferences)
 		success, err := q.emailSender.SendNotificationEmail(notification)
 		if err != nil {
 			log.Printf("Error sending email for notification %s: %v", notification.ID, err)
 			return false
 		}
+		return success
 
-		// 2. Send Push Notification
-		// We need to resolve the user ID from the recipient email
+	case models.TypeNewComment, models.TypeNewLike, models.TypeNotificationsActivated:
+		// 1. Lookup User first (needed for both Push and Email preference)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		userID, err := q.mongoDB.GetUserIDByEmail(ctx, notification.Recipient)
+		user, err := q.mongoDB.GetUserByEmail(ctx, notification.Recipient)
 		if err != nil {
-			log.Printf("Error fetching user ID for recipient %s: %v", notification.Recipient, err)
-			// Don't fail the whole process if push fails, as email might have succeeded
-			return success
+			log.Printf("Error fetching user for recipient %s: %v", notification.Recipient, err)
+			return false
 		}
+
+		// 2. Send Email if enabled
+		var success bool = true
+		if user.EmailNotifications {
+			var err error
+			success, err = q.emailSender.SendNotificationEmail(notification)
+			if err != nil {
+				log.Printf("Error sending email for notification %s: %v", notification.ID, err)
+				// Log error but continue to push? Or return false?
+				// Usually we want to try push even if email fails, but return valid status.
+				// Let's count success based on email if attempted.
+				success = false
+			}
+		} else {
+			log.Printf("Skipping email for %s (notifications disabled)", notification.Recipient)
+		}
+
+		// 3. Send Push Notification
+		userID := user.ID.Hex()
 
 		var title, message, url string
 		switch notification.Type {
@@ -175,8 +194,6 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 			title = "Notifications Activated"
 			message = "You have successfully activated notifications"
 			url = "/settings/notifications"
-		case models.TypeForgotPassword:
-			return success
 		}
 
 		if title != "" {
