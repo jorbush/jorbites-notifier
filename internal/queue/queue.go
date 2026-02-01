@@ -180,7 +180,10 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		}
 
 		if title != "" {
+			log.Printf("Sending push notification '%s' to user %s", title, userID)
 			q.sendPushToUsers([]string{userID}, notification, title, message, url)
+		} else {
+			log.Printf("No push notification title set for type %s", notification.Type)
 		}
 
 		return success
@@ -227,10 +230,14 @@ func (q *Queue) sendPushToUsers(userIDs []string, notification models.Notificati
 		return
 	}
 
+	log.Printf("Found %d push subscriptions for users %v", len(subs), userIDs)
+
 	for _, sub := range subs {
 		go func(s models.PushSubscription) {
 			if err := q.pushSender.SendNotification(s, title, message, url); err != nil {
 				log.Printf("Error sending push to %s: %v", s.ID, err)
+			} else {
+				log.Printf("Push sent to subscription %s", s.ID)
 			}
 		}(sub)
 	}

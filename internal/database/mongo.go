@@ -97,7 +97,16 @@ func (m *MongoDB) GetUsersMentionedInComment(ctx context.Context, mentionedUsers
 func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []string) ([]models.PushSubscription, error) {
 	collection := m.db.Collection("PushSubscription")
 
-	filter := bson.D{{Key: "userId", Value: bson.D{{Key: "$in", Value: userIDs}}}}
+	var objectIDs []bson.ObjectID
+	for _, id := range userIDs {
+		if objID, err := bson.ObjectIDFromHex(id); err == nil {
+			objectIDs = append(objectIDs, objID)
+		} else {
+			log.Printf("Invalid user ID %s in GetPushSubscriptionsForUsers", id)
+		}
+	}
+
+	filter := bson.D{{Key: "userId", Value: bson.D{{Key: "$in", Value: objectIDs}}}}
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -107,6 +116,25 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 	var subscriptions []models.PushSubscription
 	if err = cursor.All(ctx, &subscriptions); err != nil {
 		return nil, err
+	}
+
+	// Also try querying as strings just in case mixed types (migration period?)
+	// Or better: log if we found 0
+	if len(subscriptions) == 0 && len(userIDs) > 0 {
+		// Fallback check for string IDs just in case?
+		// No, let's trust the schema but log
+		log.Printf("No subscriptions found for objectIDs: %v", objectIDs)
+
+		// Attempt query with strings if 0 found - safety net
+		filterString := bson.D{{Key: "userId", Value: bson.D{{Key: "$in", Value: userIDs}}}}
+		cursorString, err := collection.Find(ctx, filterString)
+		if err == nil {
+			var stringSubs []models.PushSubscription
+			if err := cursorString.All(ctx, &stringSubs); err == nil && len(stringSubs) > 0 {
+				log.Printf("Found subscriptions by string ID instead of ObjectID! Please fix user ID type in DB.")
+				return stringSubs, nil
+			}
+		}
 	}
 
 	return subscriptions, nil
