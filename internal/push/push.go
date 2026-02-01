@@ -56,9 +56,9 @@ func (p *PushSender) SendNotification(subscription models.PushSubscription, titl
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
-		log.Printf("Subscription expired or not found, deleting... %s", subscription.ID)
-		if err := p.db.DeletePushSubscription(context.Background(), subscription.ID); err != nil {
-			log.Printf("Error deleting subscription %s: %v", subscription.ID, err)
+		log.Printf("Subscription expired or not found, deleting... %s", subscription.ID.Hex())
+		if err := p.db.DeletePushSubscription(context.Background(), subscription.ID.Hex()); err != nil {
+			log.Printf("Error deleting subscription %s: %v", subscription.ID.Hex(), err)
 		}
 	}
 

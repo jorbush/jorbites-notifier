@@ -152,8 +152,8 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		case models.TypeNewLike:
 			title = "New Like"
 			// Metadata: likedBy, recipeId
-			likedBy, _ := notification.Metadata["likedBy"]
-			recipeId, _ := notification.Metadata["recipeId"]
+			likedBy := notification.Metadata["likedBy"]
+			recipeId := notification.Metadata["recipeId"]
 
 			message = "Someone liked your recipe"
 			if likedBy != "" {
@@ -163,8 +163,8 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		case models.TypeNewComment:
 			title = "New Comment"
 			// Metadata: commentId, authorName, recipeId
-			authorName, _ := notification.Metadata["authorName"]
-			recipeId, _ := notification.Metadata["recipeId"]
+			authorName := notification.Metadata["authorName"]
+			recipeId := notification.Metadata["recipeId"]
 
 			message = "New comment on your recipe"
 			if authorName != "" {
@@ -210,7 +210,7 @@ func (q *Queue) broadcastPushNotification(notification models.Notification, titl
 	for _, sub := range subs {
 		go func(s models.PushSubscription) {
 			if err := q.pushSender.SendNotification(s, title, message, url); err != nil {
-				log.Printf("Error sending push to %s: %v", s.ID, err)
+				log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
 			}
 		}(sub)
 	}
@@ -235,9 +235,9 @@ func (q *Queue) sendPushToUsers(userIDs []string, notification models.Notificati
 	for _, sub := range subs {
 		go func(s models.PushSubscription) {
 			if err := q.pushSender.SendNotification(s, title, message, url); err != nil {
-				log.Printf("Error sending push to %s: %v", s.ID, err)
+				log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
 			} else {
-				log.Printf("Push sent to subscription %s", s.ID)
+				log.Printf("Push sent to subscription %s", s.ID.Hex())
 			}
 		}(sub)
 	}
@@ -249,7 +249,7 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 
 	// 1. Send Emails
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
-	emailSuccess := true
+	var emailSuccess bool
 	if err != nil {
 		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
 		emailSuccess = false
@@ -298,7 +298,7 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 
 	// 1. Send Emails
 	users, err := q.mongoDB.GetUsersMentionedInComment(ctx, notification.Metadata["mentionedUsers"], notification.Recipient)
-	emailSuccess := true
+	var emailSuccess bool
 	if err != nil {
 		log.Printf("Error fetching users for mention notification %s: %v", notification.ID, err)
 		emailSuccess = false
@@ -348,7 +348,7 @@ func (q *Queue) processNewBlogNotification(notification models.Notification) boo
 	defer cancel()
 
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
-	emailSuccess := true
+	var emailSuccess bool
 	if err != nil {
 		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
 		emailSuccess = false
