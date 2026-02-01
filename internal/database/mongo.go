@@ -93,3 +93,49 @@ func (m *MongoDB) GetUsersMentionedInComment(ctx context.Context, mentionedUsers
 	log.Printf("Found %d users with email notifications enabled and mentioned in comment", len(users))
 	return users, nil
 }
+
+func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []string) ([]models.PushSubscription, error) {
+	collection := m.db.Collection("PushSubscription")
+
+	filter := bson.D{{Key: "userId", Value: bson.D{{Key: "$in", Value: userIDs}}}}
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var subscriptions []models.PushSubscription
+	if err = cursor.All(ctx, &subscriptions); err != nil {
+		return nil, err
+	}
+
+	return subscriptions, nil
+}
+
+func (m *MongoDB) DeletePushSubscription(ctx context.Context, id string) error {
+	collection := m.db.Collection("PushSubscription")
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.D{{Key: "_id", Value: objID}}
+	_, err = collection.DeleteOne(ctx, filter)
+	return err
+}
+
+func (m *MongoDB) GetAllPushSubscriptions(ctx context.Context) ([]models.PushSubscription, error) {
+	collection := m.db.Collection("PushSubscription")
+	cursor, err := collection.Find(ctx, bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var subscriptions []models.PushSubscription
+	if err = cursor.All(ctx, &subscriptions); err != nil {
+		return nil, err
+	}
+
+	return subscriptions, nil
+}

@@ -6,24 +6,30 @@ import (
 )
 
 type Config struct {
-	Port         string
-	SMTPHost     string
-	SMTPPort     int
-	SMTPUser     string
-	SMTPPassword string
-	MongoURI     string
-	MongoDB      string
+	Port            string
+	SMTPHost        string
+	SMTPPort        int
+	SMTPUser        string
+	SMTPPassword    string
+	MongoURI        string
+	MongoDB         string
+	VAPIDPublicKey  string
+	VAPIDPrivateKey string
+	VAPIDSubject    string
 }
 
 func GetConfig() *Config {
 	return &Config{
-		Port:         getEnvOrDefault("PORT", "8080"),
-		SMTPHost:     getEnvOrDefault("SMTP_HOST", "smtp.gmail.com"),
-		SMTPPort:     getEnvAsIntOrDefault("SMTP_PORT", 587),
-		SMTPUser:     os.Getenv("SMTP_USER"),
-		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
-		MongoURI:     getEnvOrDefault("MONGO_URI", "mongodb://localhost:27017"),
-		MongoDB:      getEnvOrDefault("MONGO_DB", "jorbites"),
+		Port:            getEnvOrDefault("PORT", "8080"),
+		SMTPHost:        getEnvOrDefault("SMTP_HOST", "smtp.gmail.com"),
+		SMTPPort:        getEnvAsIntOrDefault("SMTP_PORT", 587),
+		SMTPUser:        os.Getenv("SMTP_USER"),
+		SMTPPassword:    os.Getenv("SMTP_PASSWORD"),
+		MongoURI:        getEnvOrDefault("MONGO_URI", "mongodb://localhost:27017"),
+		MongoDB:         getEnvOrDefault("MONGO_DB", "jorbites"),
+		VAPIDPublicKey:  os.Getenv("VAPID_PUBLIC_KEY"),
+		VAPIDPrivateKey: os.Getenv("VAPID_PRIVATE_KEY"),
+		VAPIDSubject:    getEnvOrDefault("VAPID_SUBJECT", "mailto:test@test.com"),
 	}
 }
 

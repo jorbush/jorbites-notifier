@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/jorbush/jorbites-notifier/internal/database"
 	"github.com/jorbush/jorbites-notifier/internal/email"
 	"github.com/jorbush/jorbites-notifier/internal/models"
+	"github.com/jorbush/jorbites-notifier/internal/push"
 )
 
 type Queue struct {
@@ -19,6 +21,7 @@ type Queue struct {
 	processing    bool
 	notifyChan    chan struct{}
 	emailSender   *email.EmailSender
+	pushSender    *push.PushSender
 	mongoDB       *database.MongoDB
 }
 
@@ -33,6 +36,7 @@ func NewQueue(cfg *config.Config) *Queue {
 		notifyChan:    make(chan struct{}, 1),
 		processing:    false,
 		emailSender:   email.NewEmailSender(cfg),
+		pushSender:    push.NewPushSender(cfg, mongoDB),
 		mongoDB:       mongoDB,
 	}
 }
@@ -138,135 +142,191 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 	}
 }
 
+// Helper to broadcast push notifications to all subscribers
+func (q *Queue) broadcastPushNotification(notification models.Notification, title, message, url string) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	subs, err := q.mongoDB.GetAllPushSubscriptions(ctx)
+	if err != nil {
+		log.Printf("Error fetching push subscriptions for broadcast: %v", err)
+		return
+	}
+
+	for _, sub := range subs {
+		go func(s models.PushSubscription) {
+			if err := q.pushSender.SendNotification(s, title, message, url); err != nil {
+				log.Printf("Error sending push to %s: %v", s.ID, err)
+			}
+		}(sub)
+	}
+}
+
+// Helper to send push to specific users
+func (q *Queue) sendPushToUsers(userIDs []string, notification models.Notification, title, message, url string) {
+	if len(userIDs) == 0 {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	subs, err := q.mongoDB.GetPushSubscriptionsForUsers(ctx, userIDs)
+	if err != nil {
+		log.Printf("Error fetching push subscriptions for users: %v", err)
+		return
+	}
+
+	for _, sub := range subs {
+		go func(s models.PushSubscription) {
+			if err := q.pushSender.SendNotification(s, title, message, url); err != nil {
+				log.Printf("Error sending push to %s: %v", s.ID, err)
+			}
+		}(sub)
+	}
+}
+
 func (q *Queue) processNewRecipeNotification(notification models.Notification) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// 1. Send Emails
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
+	emailSuccess := true
 	if err != nil {
 		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
-		return false
+		emailSuccess = false
+	} else {
+		log.Printf("Sending new recipe notification to %d users with notifications enabled", len(users))
+		successCount := 0
+		failCount := 0
+
+		for _, user := range users {
+			userNotification := models.Notification{
+				ID:        uuid.New().String(),
+				Type:      notification.Type,
+				Status:    models.StatusProcessing,
+				Recipient: user.Email,
+				Metadata:  notification.Metadata,
+			}
+
+			success, err := q.emailSender.SendNotificationEmail(userNotification)
+			if err != nil {
+				log.Printf("Error sending email to %s: %v", user.Email, err)
+				failCount++
+				continue
+			}
+
+			if success {
+				successCount++
+			} else {
+				failCount++
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		log.Printf("New recipe email results: %d successful, %d failed", successCount, failCount)
+		emailSuccess = successCount > 0
 	}
 
-	log.Printf("Sending new recipe notification to %d users with notifications enabled", len(users))
+	// 2. Send Push Notifications
+	recipeName := notification.Metadata["recipeName"]
+	q.broadcastPushNotification(notification, "New Recipe!", "New recipe available: "+recipeName, "/recipes/"+notification.Metadata["slug"])
 
-	successCount := 0
-	failCount := 0
-
-	for _, user := range users {
-		userNotification := models.Notification{
-			ID:        uuid.New().String(),
-			Type:      notification.Type,
-			Status:    models.StatusProcessing,
-			Recipient: user.Email,
-			Metadata:  notification.Metadata,
-		}
-
-		success, err := q.emailSender.SendNotificationEmail(userNotification)
-		if err != nil {
-			log.Printf("Error sending email to %s: %v", user.Email, err)
-			failCount++
-			continue
-		}
-
-		if success {
-			successCount++
-		} else {
-			failCount++
-		}
-
-		// Add a small delay to avoid overwhelming the SMTP server
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	log.Printf("New recipe notification results: %d successful, %d failed", successCount, failCount)
-	return successCount > 0
+	return emailSuccess
 }
 
 func (q *Queue) processMentionInCommentNotification(notification models.Notification) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// 1. Send Emails
 	users, err := q.mongoDB.GetUsersMentionedInComment(ctx, notification.Metadata["mentionedUsers"], notification.Recipient)
+	emailSuccess := true
 	if err != nil {
 		log.Printf("Error fetching users for mention notification %s: %v", notification.ID, err)
-		return false
+		emailSuccess = false
+	} else {
+		// Existing email logic
+		log.Printf("Sending mention in comment notification to %d users", len(users))
+		successCount := 0
+		failCount := 0
+		for _, user := range users {
+			userNotification := models.Notification{
+				ID:        uuid.New().String(),
+				Type:      notification.Type,
+				Status:    models.StatusProcessing,
+				Recipient: user.Email,
+				Metadata:  notification.Metadata,
+			}
+			success, err := q.emailSender.SendNotificationEmail(userNotification)
+			if err != nil {
+				log.Printf("Error sending email to %s: %v", user.Email, err)
+				failCount++
+				continue
+			}
+			if success {
+				successCount++
+			} else {
+				failCount++
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		log.Printf("Mention in comment email results: %d successful, %d failed", successCount, failCount)
+		emailSuccess = successCount > 0
 	}
 
-	log.Printf("Sending mention in comment notification to %d users", len(users))
-
-	successCount := 0
-	failCount := 0
-
-	for _, user := range users {
-		userNotification := models.Notification{
-			ID:        uuid.New().String(),
-			Type:      notification.Type,
-			Status:    models.StatusProcessing,
-			Recipient: user.Email,
-			Metadata:  notification.Metadata,
-		}
-
-		success, err := q.emailSender.SendNotificationEmail(userNotification)
-		if err != nil {
-			log.Printf("Error sending email to %s: %v", user.Email, err)
-			failCount++
-			continue
-		}
-
-		if success {
-			successCount++
-		} else {
-			failCount++
-		}
-
-		time.Sleep(100 * time.Millisecond)
+	// 2. Send Push Notifications
+	mentionedUserIDsStr := notification.Metadata["mentionedUsers"]
+	if mentionedUserIDsStr != "" {
+		ids := strings.Split(mentionedUserIDsStr, ",")
+		q.sendPushToUsers(ids, notification, "You were mentioned!", "You were mentioned in a comment.", "/post/"+notification.Metadata["postId"])
 	}
 
-	log.Printf("Mention in comment notification results: %d successful, %d failed", successCount, failCount)
-	return successCount > 0
+	return emailSuccess
 }
 
 func (q *Queue) processNewBlogNotification(notification models.Notification) bool {
+	// Similar logic to NewRecipe
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
+	emailSuccess := true
 	if err != nil {
 		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
-		return false
+		emailSuccess = false
+	} else {
+		log.Printf("Sending new blog notification to %d users with notifications enabled", len(users))
+		successCount := 0
+		failCount := 0
+		for _, user := range users {
+			userNotification := models.Notification{
+				ID:        uuid.New().String(),
+				Type:      notification.Type,
+				Status:    models.StatusProcessing,
+				Recipient: user.Email,
+				Metadata:  notification.Metadata,
+			}
+			success, err := q.emailSender.SendNotificationEmail(userNotification)
+			if err != nil {
+				log.Printf("Error sending email to %s: %v", user.Email, err)
+				failCount++
+				continue
+			}
+			if success {
+				successCount++
+			} else {
+				failCount++
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		log.Printf("New blog notification results: %d successful, %d failed", successCount, failCount)
+		emailSuccess = successCount > 0
 	}
 
-	log.Printf("Sending new blog notification to %d users with notifications enabled", len(users))
+	// 2. Push
+	postTitle := notification.Metadata["title"]
+	q.broadcastPushNotification(notification, "New Blog Post!", postTitle, "/blog/"+notification.Metadata["slug"])
 
-	successCount := 0
-	failCount := 0
-
-	for _, user := range users {
-		userNotification := models.Notification{
-			ID:        uuid.New().String(),
-			Type:      notification.Type,
-			Status:    models.StatusProcessing,
-			Recipient: user.Email,
-			Metadata:  notification.Metadata,
-		}
-
-		success, err := q.emailSender.SendNotificationEmail(userNotification)
-		if err != nil {
-			log.Printf("Error sending email to %s: %v", user.Email, err)
-			failCount++
-			continue
-		}
-
-		if success {
-			successCount++
-		} else {
-			failCount++
-		}
-
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	log.Printf("New blog notification results: %d successful, %d failed", successCount, failCount)
-	return successCount > 0
+	return emailSuccess
 }

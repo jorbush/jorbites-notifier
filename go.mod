@@ -2,7 +2,12 @@ module github.com/jorbush/jorbites-notifier
 
 go 1.22.3
 
-require github.com/google/uuid v1.6.0
+require (
+	github.com/SherClockHolmes/webpush-go v1.4.0
+	github.com/google/uuid v1.6.0
+)
+
+require github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 
 require (
 	github.com/golang/snappy v1.0.0 // indirect
