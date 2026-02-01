@@ -139,3 +139,14 @@ func (m *MongoDB) GetAllPushSubscriptions(ctx context.Context) ([]models.PushSub
 
 	return subscriptions, nil
 }
+
+func (m *MongoDB) GetUserIDByEmail(ctx context.Context, email string) (string, error) {
+	collection := m.db.Collection("User")
+	var user models.User
+	filter := bson.D{{Key: "email", Value: email}}
+	err := collection.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return "", err
+	}
+	return user.ID.Hex(), nil
+}

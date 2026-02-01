@@ -128,11 +128,61 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 	case models.TypeNewBlog:
 		return q.processNewBlogNotification(notification)
 	case models.TypeNewComment, models.TypeNewLike, models.TypeNotificationsActivated, models.TypeForgotPassword:
+		// 1. Send Email
 		success, err := q.emailSender.SendNotificationEmail(notification)
 		if err != nil {
 			log.Printf("Error sending email for notification %s: %v", notification.ID, err)
 			return false
 		}
+
+		// 2. Send Push Notification
+		// We need to resolve the user ID from the recipient email
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		userID, err := q.mongoDB.GetUserIDByEmail(ctx, notification.Recipient)
+		if err != nil {
+			log.Printf("Error fetching user ID for recipient %s: %v", notification.Recipient, err)
+			// Don't fail the whole process if push fails, as email might have succeeded
+			return success
+		}
+
+		var title, message, url string
+		switch notification.Type {
+		case models.TypeNewLike:
+			title = "New Like"
+			// Metadata: likedBy, recipeId
+			likedBy, _ := notification.Metadata["likedBy"]
+			recipeId, _ := notification.Metadata["recipeId"]
+
+			message = "Someone liked your recipe"
+			if likedBy != "" {
+				message = likedBy + " liked your recipe"
+			}
+			url = "/recipes/" + recipeId
+		case models.TypeNewComment:
+			title = "New Comment"
+			// Metadata: commentId, authorName, recipeId
+			authorName, _ := notification.Metadata["authorName"]
+			recipeId, _ := notification.Metadata["recipeId"]
+
+			message = "New comment on your recipe"
+			if authorName != "" {
+				message = authorName + " commented on your recipe"
+			}
+			url = "/recipes/" + recipeId
+		case models.TypeNotificationsActivated:
+			title = "Notifications Activated"
+			message = "You have successfully activated notifications"
+			url = "/settings/notifications"
+		case models.TypeForgotPassword:
+			return success
+		}
+
+		if title != "" {
+			q.sendPushToUsers([]string{userID}, notification, title, message, url)
+		}
+
 		return success
 	case models.TypeMentionInComment:
 		return q.processMentionInCommentNotification(notification)
