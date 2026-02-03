@@ -353,7 +353,7 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 	mentionedUserIDsStr := notification.Metadata["mentionedUsers"]
 	if mentionedUserIDsStr != "" {
 		ids := strings.Split(mentionedUserIDsStr, ",")
-		q.sendPushToUsers(ids, notification, "You were mentioned!", "You were mentioned in a comment.", "/post/"+notification.Metadata["postId"])
+		q.sendPushToUsers(ids, notification, "You were mentioned!", "You were mentioned in a comment.", "/recipes/"+notification.Metadata["recipeId"])
 	}
 
 	return emailSuccess
