@@ -400,7 +400,7 @@ func (q *Queue) processNewBlogNotification(notification models.Notification) boo
 
 	// 2. Push
 	postTitle := notification.Metadata["title"]
-	q.broadcastPushNotification(notification, "New Blog Post!", postTitle, "/blog/"+notification.Metadata["slug"])
+	q.broadcastPushNotification(notification, "New Blog Post!", postTitle, "/blog/"+notification.Metadata["blog_id"])
 
 	return emailSuccess
 }
