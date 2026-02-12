@@ -6,6 +6,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jorbush/jorbites-notifier/internal/i18n"
 	"github.com/jorbush/jorbites-notifier/internal/models"
 )
 
@@ -98,92 +99,28 @@ const BaseTemplate = `
             {{.Content}}
         </div>
         <div class="footer">
-            <p>You're receiving this email because you have notifications enabled on Jorbites.</p>
-            <p>To manage your email preferences, go to <a href="{{.SiteURL}}">Settings → Email Notifications</a></p>
-            <p>© {{.CurrentYear}} Jorbites. All rights reserved.</p>
+            {{.Footer}}
         </div>
     </div>
 </body>
 </html>
 `
 
-var templateContent = map[models.NotificationType]string{
-	models.TypeNewComment: `
-        <h2>You have a new comment!</h2>
-        <p>Hi there,</p>
-        <p><strong>{{.Metadata.authorName}}</strong> has left a comment on your recipe.</p>
-        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">View Comment</a>
-    `,
-	models.TypeNewLike: `
-        <h2>Someone liked your recipe!</h2>
-        <p>Hi there,</p>
-        <p><strong>{{.Metadata.likedBy}}</strong> has liked your recipe.</p>
-        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">View Recipe</a>
-    `,
-	models.TypeNewRecipe: `
-        <h2>New Recipe Alert! 🍳</h2>
-        <p>Hi there,</p>
-        <p>A new recipe has been posted on Jorbites!</p>
-        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">Check it out</a>
-    `,
-	models.TypeNotificationsActivated: `
-        <h2>Notifications Activated! 🎉</h2>
-        <p>Hi there,</p>
-        <p>You've successfully activated email notifications for Jorbites.</p>
-        <p>You'll now receive updates about:</p>
-        <ul>
-            <li>New comments on your recipes</li>
-            <li>Likes on your recipes</li>
-            <li>New recipes from your favorite chefs</li>
-        </ul>
-    `,
-	models.TypeForgotPassword: `
-    	<h2>Password Reset</h2>
-  		<p>Hi there,</p>
-  		<p>You have requested to reset your password. Click on the following link to create a new password:</p>
-  		<a href="{{.Metadata.resetUrl}}" class="button">Reset Password</a>
-    	<p>This link will expire in 1 hour.</p>
-        <p>If you did not request this change, you can ignore this email.</p>
-    `,
-	models.TypeMentionInComment: `
-    	<h2>You were mentioned in a comment!</h2>
-  		<p>Hi there,</p>
-    	<p><strong>{{.Metadata.authorName}}</strong> mentioned you in a comment on a recipe.</p>
-    	<p>Click the button below to view the recipe:</p>
-        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">View Recipe</a>
-    `,
-	models.TypeNewBlog: `
-		<h2>New Blog Post! 📝</h2>
-		<p>Hi there,</p>
-		<p>A new blog post has been published on Jorbites!</p>
-		<a href="{{.SiteURL}}/blog/{{.Metadata.blog_id}}" class="button">Read it now</a>
-	`,
-}
-
-var emailSubjects = map[models.NotificationType]string{
-	models.TypeNewComment:             "New Comment on Your Recipe - Jorbites",
-	models.TypeNewLike:                "New Like on Your Recipe - Jorbites",
-	models.TypeNewRecipe:              "New Recipe Available - Jorbites",
-	models.TypeNotificationsActivated: "Welcome to Jorbites Notifications",
-	models.TypeForgotPassword:         "Password Reset Request - Jorbites",
-	models.TypeMentionInComment:       "You Were Mentioned in a Comment - Jorbites",
-	models.TypeNewBlog:                "New Blog Post Available - Jorbites",
-}
-
 type TemplateData struct {
 	SiteURL     string
 	LogoURL     string
 	CurrentYear int
 	Content     string
+	Footer      string
 	Metadata    map[string]string
 }
 
-func GetEmailTemplate(notificationType models.NotificationType, metadata map[string]string) (string, string, error) {
+func GetEmailTemplate(notificationType models.NotificationType, metadata map[string]string, language string) (string, string, error) {
 	const siteURL = "https://jorbites.com"
 	logoURL := siteURL + "/images/logo-nobg.webp"
 
-	contentTemplate, exists := templateContent[notificationType]
-	if !exists {
+	contentTemplate := i18n.GetEmailTemplateContent(notificationType, language)
+	if contentTemplate == "" {
 		return "", "", fmt.Errorf("no template defined for notification type: %s", notificationType)
 	}
 
@@ -206,6 +143,19 @@ func GetEmailTemplate(notificationType models.NotificationType, metadata map[str
 
 	data.Content = contentBuf.String()
 
+	footerTemplate := i18n.GetBaseTemplateFooter(language)
+	footerTmpl, err := template.New("footer").Parse(footerTemplate)
+	if err != nil {
+		return "", "", err
+	}
+
+	var footerBuf bytes.Buffer
+	if err := footerTmpl.Execute(&footerBuf, data); err != nil {
+		return "", "", err
+	}
+
+	data.Footer = footerBuf.String()
+
 	baseTmpl, err := template.New("base").Parse(BaseTemplate)
 	if err != nil {
 		return "", "", err
@@ -216,10 +166,7 @@ func GetEmailTemplate(notificationType models.NotificationType, metadata map[str
 		return "", "", err
 	}
 
-	subject, exists := emailSubjects[notificationType]
-	if !exists {
-		subject = "Notification from Jorbites"
-	}
+	subject := i18n.GetEmailSubject(notificationType, language)
 
 	return subject, htmlBuf.String(), nil
 }

@@ -1,4 +1,4 @@
-.PHONY: docker run clean
+.PHONY: docker run clean test
 
 docker:
 	@if [ ! -f .env ]; then echo ".env file not found"; exit 1; fi
@@ -28,3 +28,6 @@ run:
 clean:
 	-docker stop jorbites-notifier
 	-docker rm jorbites-notifier
+
+test:
+	go test -v ./...

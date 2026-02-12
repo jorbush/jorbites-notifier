@@ -178,3 +178,18 @@ func (m *MongoDB) GetUserByEmail(ctx context.Context, email string) (*models.Use
 	}
 	return &user, nil
 }
+
+func (m *MongoDB) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+	collection := m.db.Collection("User")
+	var user models.User
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.D{{Key: "_id", Value: objID}}
+	err = collection.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

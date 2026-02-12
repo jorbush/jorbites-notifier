@@ -19,7 +19,7 @@ func NewEmailSender(cfg *config.Config) *EmailSender {
 	}
 }
 
-func (s *EmailSender) SendNotificationEmail(notification models.Notification) (bool, error) {
+func (s *EmailSender) SendNotificationEmail(notification models.Notification, language string) (bool, error) {
 	if notification.Recipient == "" {
 		return false, fmt.Errorf("no recipient specified")
 	}
@@ -28,7 +28,7 @@ func (s *EmailSender) SendNotificationEmail(notification models.Notification) (b
 		return false, fmt.Errorf("SMTP credentials not configured")
 	}
 
-	subject, body, err := GetEmailTemplate(notification.Type, notification.Metadata)
+	subject, body, err := GetEmailTemplate(notification.Type, notification.Metadata, language)
 	if err != nil {
 		return false, fmt.Errorf("error preparing email template: %w", err)
 	}

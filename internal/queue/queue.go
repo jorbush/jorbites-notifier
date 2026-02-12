@@ -11,6 +11,7 @@ import (
 	"github.com/jorbush/jorbites-notifier/config"
 	"github.com/jorbush/jorbites-notifier/internal/database"
 	"github.com/jorbush/jorbites-notifier/internal/email"
+	"github.com/jorbush/jorbites-notifier/internal/i18n"
 	"github.com/jorbush/jorbites-notifier/internal/models"
 	"github.com/jorbush/jorbites-notifier/internal/push"
 )
@@ -128,8 +129,18 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 	case models.TypeNewBlog:
 		return q.processNewBlogNotification(notification)
 	case models.TypeForgotPassword:
-		// 1. Send Email (Transactional - ignore preferences)
-		success, err := q.emailSender.SendNotificationEmail(notification)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		user, err := q.mongoDB.GetUserByEmail(ctx, notification.Recipient)
+		var language string = "es"
+		if err != nil {
+			log.Printf("Error fetching user for recipient %s: %v (using default language)", notification.Recipient, err)
+		} else {
+			language = i18n.GetUserLanguage(user)
+		}
+
+		success, err := q.emailSender.SendNotificationEmail(notification, language)
 		if err != nil {
 			log.Printf("Error sending email for notification %s: %v", notification.ID, err)
 			return false
@@ -147,52 +158,40 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 			return false
 		}
 
-		// 2. Send Email if enabled
+		language := i18n.GetUserLanguage(user)
+
 		var success bool = true
 		if user.EmailNotifications {
 			var err error
-			success, err = q.emailSender.SendNotificationEmail(notification)
+			success, err = q.emailSender.SendNotificationEmail(notification, language)
 			if err != nil {
 				log.Printf("Error sending email for notification %s: %v", notification.ID, err)
-				// Log error but continue to push? Or return false?
-				// Usually we want to try push even if email fails, but return valid status.
-				// Let's count success based on email if attempted.
 				success = false
 			}
 		} else {
 			log.Printf("Skipping email for %s (notifications disabled)", notification.Recipient)
 		}
 
-		// 3. Send Push Notification
 		userID := user.ID.Hex()
 
 		var title, message, url string
 		switch notification.Type {
 		case models.TypeNewLike:
-			title = "New Like"
-			// Metadata: likedBy, recipeId
-			likedBy := notification.Metadata["likedBy"]
 			recipeId := notification.Metadata["recipeId"]
-
-			message = "Someone liked your recipe"
-			if likedBy != "" {
-				message = likedBy + " liked your recipe"
-			}
+			pushTexts := i18n.GetPushNotificationText(models.TypeNewLike, language, notification.Metadata)
+			title = pushTexts.Title
+			message = pushTexts.Message
 			url = "/recipes/" + recipeId
 		case models.TypeNewComment:
-			title = "New Comment"
-			// Metadata: commentId, authorName, recipeId
-			authorName := notification.Metadata["authorName"]
 			recipeId := notification.Metadata["recipeId"]
-
-			message = "New comment on your recipe"
-			if authorName != "" {
-				message = authorName + " commented on your recipe"
-			}
+			pushTexts := i18n.GetPushNotificationText(models.TypeNewComment, language, notification.Metadata)
+			title = pushTexts.Title
+			message = pushTexts.Message
 			url = "/recipes/" + recipeId
 		case models.TypeNotificationsActivated:
-			title = "Notifications Activated"
-			message = "You have successfully activated notifications"
+			pushTexts := i18n.GetPushNotificationText(models.TypeNotificationsActivated, language, notification.Metadata)
+			title = pushTexts.Title
+			message = pushTexts.Message
 			url = "/settings/notifications"
 		}
 
@@ -212,10 +211,40 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 	}
 }
 
-// Helper to broadcast push notifications to all subscribers
-func (q *Queue) broadcastPushNotification(notification models.Notification, title, message, url string) {
+func (q *Queue) broadcastPushNotificationMultiLang(notification models.Notification, url string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	subs, err := q.mongoDB.GetAllPushSubscriptions(ctx)
+	if err != nil {
+		log.Printf("Error fetching push subscriptions for broadcast: %v", err)
+		return
+	}
+
+	for _, sub := range subs {
+		go func(s models.PushSubscription) {
+			userCtx, userCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer userCancel()
+
+			user, err := q.mongoDB.GetUserByID(userCtx, s.UserID.Hex())
+			var language string = "es"
+			if err != nil {
+				log.Printf("Error fetching user %s for push notification: %v (using default language)", s.UserID.Hex(), err)
+			} else {
+				language = i18n.GetUserLanguage(user)
+			}
+
+			pushTexts := i18n.GetPushNotificationText(notification.Type, language, notification.Metadata)
+
+			if err := q.pushSender.SendNotification(s, pushTexts.Title, pushTexts.Message, url); err != nil {
+				log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
+			}
+		}(sub)
+	}
+}
+
+func (q *Queue) broadcastPushNotification(notification models.Notification, title, message, url string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	subs, err := q.mongoDB.GetAllPushSubscriptions(ctx)
@@ -233,12 +262,50 @@ func (q *Queue) broadcastPushNotification(notification models.Notification, titl
 	}
 }
 
-// Helper to send push to specific users
+func (q *Queue) sendPushToUsersMultiLang(userIDs []string, notification models.Notification, url string) {
+	if len(userIDs) == 0 {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	subs, err := q.mongoDB.GetPushSubscriptionsForUsers(ctx, userIDs)
+	if err != nil {
+		log.Printf("Error fetching push subscriptions for users: %v", err)
+		return
+	}
+
+	log.Printf("Found %d push subscriptions for users %v", len(subs), userIDs)
+
+	for _, sub := range subs {
+		go func(s models.PushSubscription) {
+			userCtx, userCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer userCancel()
+
+			user, err := q.mongoDB.GetUserByID(userCtx, s.UserID.Hex())
+			var language string = "es"
+			if err != nil {
+				log.Printf("Error fetching user %s for push notification: %v (using default language)", s.UserID.Hex(), err)
+			} else {
+				language = i18n.GetUserLanguage(user)
+			}
+
+			pushTexts := i18n.GetPushNotificationText(notification.Type, language, notification.Metadata)
+
+			if err := q.pushSender.SendNotification(s, pushTexts.Title, pushTexts.Message, url); err != nil {
+				log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
+			} else {
+				log.Printf("Push sent to subscription %s", s.ID.Hex())
+			}
+		}(sub)
+	}
+}
+
 func (q *Queue) sendPushToUsers(userIDs []string, notification models.Notification, title, message, url string) {
 	if len(userIDs) == 0 {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	subs, err := q.mongoDB.GetPushSubscriptionsForUsers(ctx, userIDs)
@@ -264,7 +331,6 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// 1. Send Emails
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
 	var emailSuccess bool
 	if err != nil {
@@ -284,7 +350,9 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 				Metadata:  notification.Metadata,
 			}
 
-			success, err := q.emailSender.SendNotificationEmail(userNotification)
+			language := i18n.GetUserLanguage(&user)
+
+			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
 				log.Printf("Error sending email to %s: %v", user.Email, err)
 				failCount++
@@ -302,9 +370,7 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 		emailSuccess = successCount > 0
 	}
 
-	// 2. Send Push Notifications
-	recipeName := notification.Metadata["recipeName"]
-	q.broadcastPushNotification(notification, "New Recipe!", "New recipe available: "+recipeName, "/recipes/"+notification.Metadata["slug"])
+	q.broadcastPushNotificationMultiLang(notification, "/recipes/"+notification.Metadata["slug"])
 
 	return emailSuccess
 }
@@ -313,14 +379,12 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// 1. Send Emails
 	users, err := q.mongoDB.GetUsersMentionedInComment(ctx, notification.Metadata["mentionedUsers"], notification.Recipient)
 	var emailSuccess bool
 	if err != nil {
 		log.Printf("Error fetching users for mention notification %s: %v", notification.ID, err)
 		emailSuccess = false
 	} else {
-		// Existing email logic
 		log.Printf("Sending mention in comment notification to %d users", len(users))
 		successCount := 0
 		failCount := 0
@@ -332,7 +396,9 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 				Recipient: user.Email,
 				Metadata:  notification.Metadata,
 			}
-			success, err := q.emailSender.SendNotificationEmail(userNotification)
+			language := i18n.GetUserLanguage(&user)
+
+			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
 				log.Printf("Error sending email to %s: %v", user.Email, err)
 				failCount++
@@ -349,18 +415,16 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 		emailSuccess = successCount > 0
 	}
 
-	// 2. Send Push Notifications
 	mentionedUserIDsStr := notification.Metadata["mentionedUsers"]
 	if mentionedUserIDsStr != "" {
 		ids := strings.Split(mentionedUserIDsStr, ",")
-		q.sendPushToUsers(ids, notification, "You were mentioned!", "You were mentioned in a comment.", "/recipes/"+notification.Metadata["recipeId"])
+		q.sendPushToUsersMultiLang(ids, notification, "/recipes/"+notification.Metadata["recipeId"])
 	}
 
 	return emailSuccess
 }
 
 func (q *Queue) processNewBlogNotification(notification models.Notification) bool {
-	// Similar logic to NewRecipe
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -381,7 +445,8 @@ func (q *Queue) processNewBlogNotification(notification models.Notification) boo
 				Recipient: user.Email,
 				Metadata:  notification.Metadata,
 			}
-			success, err := q.emailSender.SendNotificationEmail(userNotification)
+			language := i18n.GetUserLanguage(&user)
+			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
 				log.Printf("Error sending email to %s: %v", user.Email, err)
 				failCount++
@@ -398,9 +463,7 @@ func (q *Queue) processNewBlogNotification(notification models.Notification) boo
 		emailSuccess = successCount > 0
 	}
 
-	// 2. Push
-	postTitle := notification.Metadata["title"]
-	q.broadcastPushNotification(notification, "New Blog Post!", postTitle, "/blog/"+notification.Metadata["blog_id"])
+	q.broadcastPushNotificationMultiLang(notification, "/blog/"+notification.Metadata["blog_id"])
 
 	return emailSuccess
 }
