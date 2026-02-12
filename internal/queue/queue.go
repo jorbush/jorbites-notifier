@@ -197,7 +197,25 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 
 		if title != "" {
 			log.Printf("Sending push notification '%s' to user %s", title, userID)
-			q.sendPushToUsers([]string{userID}, notification, title, message, url)
+
+			subsCtx, subsCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer subsCancel()
+
+			subs, err := q.mongoDB.GetPushSubscriptionsForUsers(subsCtx, []string{userID})
+			if err != nil {
+				log.Printf("Error fetching push subscriptions for user %s: %v", userID, err)
+			} else {
+				log.Printf("Found %d push subscriptions for user %s", len(subs), userID)
+				for _, sub := range subs {
+					go func(s models.PushSubscription) {
+						if err := q.pushSender.SendNotification(s, title, message, url); err != nil {
+							log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
+						} else {
+							log.Printf("Push sent to subscription %s", s.ID.Hex())
+						}
+					}(sub)
+				}
+			}
 		} else {
 			log.Printf("No push notification title set for type %s", notification.Type)
 		}
@@ -243,25 +261,6 @@ func (q *Queue) broadcastPushNotificationMultiLang(notification models.Notificat
 	}
 }
 
-func (q *Queue) broadcastPushNotification(notification models.Notification, title, message, url string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	subs, err := q.mongoDB.GetAllPushSubscriptions(ctx)
-	if err != nil {
-		log.Printf("Error fetching push subscriptions for broadcast: %v", err)
-		return
-	}
-
-	for _, sub := range subs {
-		go func(s models.PushSubscription) {
-			if err := q.pushSender.SendNotification(s, title, message, url); err != nil {
-				log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
-			}
-		}(sub)
-	}
-}
-
 func (q *Queue) sendPushToUsersMultiLang(userIDs []string, notification models.Notification, url string) {
 	if len(userIDs) == 0 {
 		return
@@ -293,32 +292,6 @@ func (q *Queue) sendPushToUsersMultiLang(userIDs []string, notification models.N
 			pushTexts := i18n.GetPushNotificationText(notification.Type, language, notification.Metadata)
 
 			if err := q.pushSender.SendNotification(s, pushTexts.Title, pushTexts.Message, url); err != nil {
-				log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
-			} else {
-				log.Printf("Push sent to subscription %s", s.ID.Hex())
-			}
-		}(sub)
-	}
-}
-
-func (q *Queue) sendPushToUsers(userIDs []string, notification models.Notification, title, message, url string) {
-	if len(userIDs) == 0 {
-		return
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	subs, err := q.mongoDB.GetPushSubscriptionsForUsers(ctx, userIDs)
-	if err != nil {
-		log.Printf("Error fetching push subscriptions for users: %v", err)
-		return
-	}
-
-	log.Printf("Found %d push subscriptions for users %v", len(subs), userIDs)
-
-	for _, sub := range subs {
-		go func(s models.PushSubscription) {
-			if err := q.pushSender.SendNotification(s, title, message, url); err != nil {
 				log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
 			} else {
 				log.Printf("Push sent to subscription %s", s.ID.Hex())
