@@ -174,6 +174,26 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
 		<a href="{{.SiteURL}}/blog/{{.Metadata.blog_id}}" class="button">Read it now</a>
 	`,
 	},
+	models.TypeNewEvent: {
+		"es": `
+		<h2>¡Nuevo Evento! 🎉</h2>
+		<p>Hola,</p>
+		<p>¡Se ha publicado un nuevo evento en Jorbites!</p>
+		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">Ver Evento</a>
+	`,
+		"ca": `
+		<h2>Nou Esdeveniment! 🎉</h2>
+		<p>Hola,</p>
+		<p>S'ha publicat un nou esdeveniment a Jorbites!</p>
+		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">Veure Esdeveniment</a>
+	`,
+		"en": `
+		<h2>New Event! 🎉</h2>
+		<p>Hi there,</p>
+		<p>A new event has been published on Jorbites!</p>
+		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">View Event</a>
+	`,
+	},
 }
 
 var emailSubjects = map[models.NotificationType]map[string]string{
@@ -211,6 +231,11 @@ var emailSubjects = map[models.NotificationType]map[string]string{
 		"es": "Nueva Entrada de Blog Disponible - Jorbites",
 		"ca": "Nova Entrada de Blog Disponible - Jorbites",
 		"en": "New Blog Post Available - Jorbites",
+	},
+	models.TypeNewEvent: {
+		"es": "Nuevo Evento Disponible - Jorbites",
+		"ca": "Nou Esdeveniment Disponible - Jorbites",
+		"en": "New Event Available - Jorbites",
 	},
 }
 
@@ -362,6 +387,17 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 			return PushNotificationTexts{Title: "New Blog Post!", Message: postTitle}
 		default: // es
 			return PushNotificationTexts{Title: "¡Nuevo Post de Blog!", Message: postTitle}
+		}
+
+	case models.TypeNewEvent:
+		eventTitle := metadata["title"]
+		switch language {
+		case "ca":
+			return PushNotificationTexts{Title: "Nou Esdeveniment!", Message: eventTitle}
+		case "en":
+			return PushNotificationTexts{Title: "New Event!", Message: eventTitle}
+		default: // es
+			return PushNotificationTexts{Title: "¡Nuevo Evento!", Message: eventTitle}
 		}
 
 	default:

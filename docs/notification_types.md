@@ -129,6 +129,25 @@ Sent when a new blog post is published.
 }
 ```
 
+### NEW_EVENT
+
+Sent when a new event is published.
+
+**Metadata Fields**:
+- `eventId`: ID of the new event
+- `title`: Title of the event
+
+**Example**:
+```json
+{
+  "type": "NEW_EVENT",
+  "metadata": {
+    "eventId": "event-123",
+    "title": "Summer Cooking Event"
+  }
+}
+```
+
 ## Adding New Notification Types
 
 To add a new notification type:
