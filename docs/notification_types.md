@@ -148,6 +148,25 @@ Sent when a new event is published.
 }
 ```
 
+### EVENT_ENDING_SOON
+
+Sent when an event is about to end (3 days before the end date).
+
+**Metadata Fields**:
+- `eventId`: ID of the event that is ending soon
+- `title`: Title of the event
+
+**Example**:
+```json
+{
+  "type": "EVENT_ENDING_SOON",
+  "metadata": {
+    "eventId": "event-123",
+    "title": "Summer Cooking Event"
+  }
+}
+```
+
 ## Adding New Notification Types
 
 To add a new notification type:

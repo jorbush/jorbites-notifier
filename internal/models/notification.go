@@ -18,6 +18,7 @@ const (
 	TypeMentionInComment       NotificationType = "MENTION_IN_COMMENT"
 	TypeNewBlog                NotificationType = "NEW_BLOG"
 	TypeNewEvent               NotificationType = "NEW_EVENT"
+	TypeEventEndingSoon        NotificationType = "EVENT_ENDING_SOON"
 )
 
 type Notification struct {

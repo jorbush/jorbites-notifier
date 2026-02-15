@@ -194,6 +194,29 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
 		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">View Event</a>
 	`,
 	},
+	models.TypeEventEndingSoon: {
+		"es": `
+		<h2>¡El Evento Está por Terminar! ⏰</h2>
+		<p>Hola,</p>
+		<p>El evento <strong>{{.Metadata.title}}</strong> terminará en 3 días.</p>
+		<p>¡No te lo pierdas! Todavía tienes tiempo para participar.</p>
+		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">Ver Evento</a>
+	`,
+		"ca": `
+		<h2>L'Esdeveniment Està a Punt d'Acabar! ⏰</h2>
+		<p>Hola,</p>
+		<p>L'esdeveniment <strong>{{.Metadata.title}}</strong> acabarà en 3 dies.</p>
+		<p>No te'l perdis! Encara tens temps per participar.</p>
+		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">Veure Esdeveniment</a>
+	`,
+		"en": `
+		<h2>Event Ending Soon! ⏰</h2>
+		<p>Hi there,</p>
+		<p>The event <strong>{{.Metadata.title}}</strong> will end in 3 days.</p>
+		<p>Don't miss out! You still have time to participate.</p>
+		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">View Event</a>
+	`,
+	},
 }
 
 var emailSubjects = map[models.NotificationType]map[string]string{
@@ -236,6 +259,11 @@ var emailSubjects = map[models.NotificationType]map[string]string{
 		"es": "Nuevo Evento Disponible - Jorbites",
 		"ca": "Nou Esdeveniment Disponible - Jorbites",
 		"en": "New Event Available - Jorbites",
+	},
+	models.TypeEventEndingSoon: {
+		"es": "¡El Evento Está por Terminar! - Jorbites",
+		"ca": "L'Esdeveniment Està a Punt d'Acabar! - Jorbites",
+		"en": "Event Ending Soon! - Jorbites",
 	},
 }
 
@@ -398,6 +426,17 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 			return PushNotificationTexts{Title: "New Event!", Message: eventTitle}
 		default: // es
 			return PushNotificationTexts{Title: "¡Nuevo Evento!", Message: eventTitle}
+		}
+
+	case models.TypeEventEndingSoon:
+		eventTitle := metadata["title"]
+		switch language {
+		case "ca":
+			return PushNotificationTexts{Title: "L'Esdeveniment Acaba Aviat!", Message: eventTitle + " acaba en 3 dies"}
+		case "en":
+			return PushNotificationTexts{Title: "Event Ending Soon!", Message: eventTitle + " ends in 3 days"}
+		default: // es
+			return PushNotificationTexts{Title: "¡Evento Terminando!", Message: eventTitle + " termina en 3 días"}
 		}
 
 	default:
