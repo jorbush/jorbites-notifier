@@ -217,6 +217,46 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
 		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">View Event</a>
 	`,
 	},
+	models.TypeNewQuest: {
+		"es": `
+		<h2>¡Nueva Misión! 🎯</h2>
+		<p>Hola,</p>
+		<p>¡Alguien ha solicitado una nueva receta en Jorbites!</p>
+		<a href="{{.SiteURL}}/quests/{{.Metadata.questId}}" class="button">Ver Misión</a>
+	`,
+		"ca": `
+		<h2>Nova Missió! 🎯</h2>
+		<p>Hola,</p>
+		<p>Algú ha sol·licitat una nova recepta a Jorbites!</p>
+		<a href="{{.SiteURL}}/quests/{{.Metadata.questId}}" class="button">Veure Missió</a>
+	`,
+		"en": `
+		<h2>New Quest! 🎯</h2>
+		<p>Hi there,</p>
+		<p>Someone has requested a new recipe on Jorbites!</p>
+		<a href="{{.SiteURL}}/quests/{{.Metadata.questId}}" class="button">View Quest</a>
+	`,
+	},
+	models.TypeQuestFulfilled: {
+		"es": `
+		<h2>¡Tu Misión ha sido completada! 🏆</h2>
+		<p>Hola,</p>
+		<p><strong>{{.Metadata.fulfilledByName}}</strong> ha completado tu misión con una receta.</p>
+		<a href="{{.SiteURL}}/quests/{{.Metadata.questId}}" class="button">Ver Envío</a>
+	`,
+		"ca": `
+		<h2>La teva Missió ha estat completada! 🏆</h2>
+		<p>Hola,</p>
+		<p><strong>{{.Metadata.fulfilledByName}}</strong> ha completat la teva missió amb una recepta.</p>
+		<a href="{{.SiteURL}}/quests/{{.Metadata.questId}}" class="button">Veure Enviament</a>
+	`,
+		"en": `
+		<h2>Your Quest has been fulfilled! 🏆</h2>
+		<p>Hi there,</p>
+		<p><strong>{{.Metadata.fulfilledByName}}</strong> has fulfilled your quest with a recipe.</p>
+		<a href="{{.SiteURL}}/quests/{{.Metadata.questId}}" class="button">View Submission</a>
+	`,
+	},
 }
 
 var emailSubjects = map[models.NotificationType]map[string]string{
@@ -264,6 +304,16 @@ var emailSubjects = map[models.NotificationType]map[string]string{
 		"es": "¡El Evento Está por Terminar! - Jorbites",
 		"ca": "L'Esdeveniment Està a Punt d'Acabar! - Jorbites",
 		"en": "Event Ending Soon! - Jorbites",
+	},
+	models.TypeNewQuest: {
+		"es": "Nueva Misión Disponible - Jorbites",
+		"ca": "Nova Missió Disponible - Jorbites",
+		"en": "New Quest Available - Jorbites",
+	},
+	models.TypeQuestFulfilled: {
+		"es": "¡Tu Misión ha sido completada! - Jorbites",
+		"ca": "La teva Missió ha estat completada! - Jorbites",
+		"en": "Your Quest has been fulfilled! - Jorbites",
 	},
 }
 
@@ -437,6 +487,36 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 			return PushNotificationTexts{Title: "Event Ending Soon!", Message: eventTitle + " ends in 3 days"}
 		default: // es
 			return PushNotificationTexts{Title: "¡Evento Terminando!", Message: eventTitle + " termina en 3 días"}
+		}
+
+	case models.TypeNewQuest:
+		switch language {
+		case "ca":
+			return PushNotificationTexts{Title: "Nova Quest!", Message: "S'ha publicat una nova quest a Jorbites"}
+		case "en":
+			return PushNotificationTexts{Title: "New Quest!", Message: "A new quest has been posted on Jorbites"}
+		default: // es
+			return PushNotificationTexts{Title: "¡Nueva Quest!", Message: "Se ha publicado una nueva quest en Jorbites"}
+		}
+
+	case models.TypeQuestFulfilled:
+		fulfilledByName := metadata["fulfilledByName"]
+		switch language {
+		case "ca":
+			if fulfilledByName != "" {
+				return PushNotificationTexts{Title: "Missió Completada!", Message: fulfilledByName + " ha completat la teva missió"}
+			}
+			return PushNotificationTexts{Title: "Missió Completada!", Message: "La teva missió ha estat completada"}
+		case "en":
+			if fulfilledByName != "" {
+				return PushNotificationTexts{Title: "Quest Fulfilled!", Message: fulfilledByName + " fulfilled your quest"}
+			}
+			return PushNotificationTexts{Title: "Quest Fulfilled!", Message: "Your quest has been fulfilled"}
+		default: // es
+			if fulfilledByName != "" {
+				return PushNotificationTexts{Title: "¡Misión Completada!", Message: fulfilledByName + " ha completado tu misión"}
+			}
+			return PushNotificationTexts{Title: "¡Misión Completada!", Message: "Tu misión ha sido completada"}
 		}
 
 	default:

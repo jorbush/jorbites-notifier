@@ -68,6 +68,8 @@ func TestGetEmailTemplateContent(t *testing.T) {
 		models.TypeForgotPassword,
 		models.TypeMentionInComment,
 		models.TypeNewBlog,
+		models.TypeNewQuest,
+		models.TypeQuestFulfilled,
 	}
 
 	languages := []string{"es", "ca", "en"}
@@ -107,6 +109,8 @@ func TestGetEmailSubject(t *testing.T) {
 		models.TypeForgotPassword,
 		models.TypeMentionInComment,
 		models.TypeNewBlog,
+		models.TypeNewQuest,
+		models.TypeQuestFulfilled,
 	}
 
 	languages := []string{"es", "ca", "en"}
@@ -276,6 +280,54 @@ func TestGetPushNotificationText(t *testing.T) {
 			wantTitle: true,
 			wantMsg:   true,
 		},
+		{
+			name:      "TypeNewQuest - Spanish",
+			notifType: models.TypeNewQuest,
+			lang:      "es",
+			metadata:  map[string]string{"questId": "quest-123"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeNewQuest - Catalan",
+			notifType: models.TypeNewQuest,
+			lang:      "ca",
+			metadata:  map[string]string{"questId": "quest-123"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeNewQuest - English",
+			notifType: models.TypeNewQuest,
+			lang:      "en",
+			metadata:  map[string]string{"questId": "quest-123"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeQuestFulfilled - Spanish",
+			notifType: models.TypeQuestFulfilled,
+			lang:      "es",
+			metadata:  map[string]string{"questId": "quest-123", "fulfilledByName": "User1"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeQuestFulfilled - Catalan",
+			notifType: models.TypeQuestFulfilled,
+			lang:      "ca",
+			metadata:  map[string]string{"questId": "quest-123", "fulfilledByName": "User1"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeQuestFulfilled - English",
+			notifType: models.TypeQuestFulfilled,
+			lang:      "en",
+			metadata:  map[string]string{"questId": "quest-123", "fulfilledByName": "User1"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -364,6 +416,8 @@ func TestAllNotificationTypesHaveTranslations(t *testing.T) {
 		models.TypeForgotPassword,
 		models.TypeMentionInComment,
 		models.TypeNewBlog,
+		models.TypeNewQuest,
+		models.TypeQuestFulfilled,
 	}
 
 	languages := []string{"es", "ca", "en"}
@@ -391,10 +445,11 @@ func TestAllNotificationTypesHaveTranslations(t *testing.T) {
 				}
 				
 				result := GetPushNotificationText(notifType, lang, map[string]string{
-					"likedBy":    "Test User",
-					"authorName": "Test Author",
-					"recipeName": "Test Recipe",
-					"title":      "Test Title",
+					"likedBy":         "Test User",
+					"authorName":      "Test Author",
+					"recipeName":      "Test Recipe",
+					"title":           "Test Title",
+					"fulfilledByName": "Test User",
 				})
 				if result.Title == "" || result.Message == "" {
 					t.Errorf("Missing push notification for %s in %s", notifType, lang)

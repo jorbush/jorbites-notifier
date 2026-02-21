@@ -19,6 +19,8 @@ const (
 	TypeNewBlog                NotificationType = "NEW_BLOG"
 	TypeNewEvent               NotificationType = "NEW_EVENT"
 	TypeEventEndingSoon        NotificationType = "EVENT_ENDING_SOON"
+	TypeNewQuest               NotificationType = "NEW_QUEST"
+	TypeQuestFulfilled         NotificationType = "QUEST_FULFILLED"
 )
 
 type Notification struct {

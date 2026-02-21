@@ -151,7 +151,7 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		}
 		return success
 
-	case models.TypeNewComment, models.TypeNewLike, models.TypeNotificationsActivated:
+	case models.TypeNewComment, models.TypeNewLike, models.TypeNotificationsActivated, models.TypeQuestFulfilled:
 		// 1. Lookup User first (needed for both Push and Email preference)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -196,7 +196,12 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 			pushTexts := i18n.GetPushNotificationText(models.TypeNotificationsActivated, language, notification.Metadata)
 			title = pushTexts.Title
 			message = pushTexts.Message
-			url = "/settings/notifications"
+			url = "/"
+		case models.TypeQuestFulfilled:
+			pushTexts := i18n.GetPushNotificationText(models.TypeQuestFulfilled, language, notification.Metadata)
+			title = pushTexts.Title
+			message = pushTexts.Message
+			url = "/quests/" + notification.Metadata["questId"]
 		}
 
 		if title != "" {
@@ -227,6 +232,8 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		return success
 	case models.TypeMentionInComment:
 		return q.processMentionInCommentNotification(notification)
+	case models.TypeNewQuest:
+		return q.processNewQuestNotification(notification)
 	default:
 		log.Printf("Unknown notification type: %s", notification.Type)
 		return false
@@ -532,3 +539,48 @@ func (q *Queue) processEventEndingSoonNotification(notification models.Notificat
 
 	return emailSuccess
 }
+
+func (q *Queue) processNewQuestNotification(notification models.Notification) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
+	var emailSuccess bool
+	if err != nil {
+		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		emailSuccess = false
+	} else {
+		log.Printf("Sending new quest notification to %d users with notifications enabled", len(users))
+		successCount := 0
+		failCount := 0
+		for _, user := range users {
+			userNotification := models.Notification{
+				ID:        uuid.New().String(),
+				Type:      notification.Type,
+				Status:    models.StatusProcessing,
+				Recipient: user.Email,
+				Metadata:  notification.Metadata,
+			}
+			language := i18n.GetUserLanguage(&user)
+			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
+			if err != nil {
+				log.Printf("Error sending email to %s: %v", user.Email, err)
+				failCount++
+				continue
+			}
+			if success {
+				successCount++
+			} else {
+				failCount++
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		log.Printf("New quest notification results: %d successful, %d failed", successCount, failCount)
+		emailSuccess = successCount > 0
+	}
+
+	q.broadcastPushNotificationMultiLang(notification, "/quests/"+notification.Metadata["questId"])
+
+	return emailSuccess
+}
+

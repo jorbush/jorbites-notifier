@@ -148,6 +148,45 @@ Sent when a new event is published.
 }
 ```
 
+### NEW_QUEST
+
+Sent when a user requests a recipe (mission/quest). Broadcast to subscribed users, similar to NEW_RECIPE, NEW_BLOG, and NEW_EVENT.
+
+**Metadata Fields**:
+- `questId`: ID of the new quest
+
+**Example**:
+```json
+{
+  "type": "NEW_QUEST",
+  "metadata": {
+    "questId": "quest-456"
+  }
+}
+```
+
+### QUEST_FULFILLED
+
+Sent when someone fulfills a quest (makes a submission). Notifies the requestor of the quest, similar to NEW_COMMENT.
+
+**Metadata Fields**:
+- `questId`: ID of the quest that was fulfilled
+- `submissionId`: ID of the submission
+- `fulfilledByName`: Name of the user who fulfilled the quest
+
+**Example**:
+```json
+{
+  "type": "QUEST_FULFILLED",
+  "recipient": "user@example.com",
+  "metadata": {
+    "questId": "quest-456",
+    "submissionId": "sub-789",
+    "fulfilledByName": "User2"
+  }
+}
+```
+
 ### EVENT_ENDING_SOON
 
 Sent when an event is about to end (3 days before the end date).
