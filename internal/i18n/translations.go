@@ -492,11 +492,11 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 	case models.TypeNewQuest:
 		switch language {
 		case "ca":
-			return PushNotificationTexts{Title: "Nova Quest!", Message: "S'ha publicat una nova quest a Jorbites"}
+			return PushNotificationTexts{Title: "Nova Missió!", Message: "S'ha publicat una nova missió a Jorbites"}
 		case "en":
 			return PushNotificationTexts{Title: "New Quest!", Message: "A new quest has been posted on Jorbites"}
 		default: // es
-			return PushNotificationTexts{Title: "¡Nueva Quest!", Message: "Se ha publicado una nueva quest en Jorbites"}
+			return PushNotificationTexts{Title: "¡Nueva Misión!", Message: "Se ha publicado una nueva misión en Jorbites"}
 		}
 
 	case models.TypeQuestFulfilled:
