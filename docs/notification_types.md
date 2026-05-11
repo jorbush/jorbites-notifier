@@ -206,6 +206,25 @@ Sent when an event is about to end (3 days before the end date).
 }
 ```
 
+### NEW_CHALLENGE
+
+Broadcast sent every Monday at 08:00 AM (Europe/Madrid) to all subscribed users announcing the new Challenge of the Week.
+
+**Metadata Fields**:
+- `title`: Title of the challenge (e.g. "Reto de Ingrediente")
+- `description`: Description of the challenge with the value already interpolated
+
+**Example**:
+```json
+{
+  "type": "NEW_CHALLENGE",
+  "metadata": {
+    "title": "Reto de Ingrediente",
+    "description": "Esta semana el ingrediente estrella es el tomate. ¡Crea una receta que lo incluya!"
+  }
+}
+```
+
 ## Adding New Notification Types
 
 To add a new notification type:

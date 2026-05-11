@@ -70,6 +70,7 @@ func TestGetEmailTemplateContent(t *testing.T) {
 		models.TypeNewBlog,
 		models.TypeNewQuest,
 		models.TypeQuestFulfilled,
+		models.TypeNewChallenge,
 	}
 
 	languages := []string{"es", "ca", "en"}
@@ -111,6 +112,7 @@ func TestGetEmailSubject(t *testing.T) {
 		models.TypeNewBlog,
 		models.TypeNewQuest,
 		models.TypeQuestFulfilled,
+		models.TypeNewChallenge,
 	}
 
 	languages := []string{"es", "ca", "en"}
@@ -418,6 +420,7 @@ func TestAllNotificationTypesHaveTranslations(t *testing.T) {
 		models.TypeNewBlog,
 		models.TypeNewQuest,
 		models.TypeQuestFulfilled,
+		models.TypeNewChallenge,
 	}
 
 	languages := []string{"es", "ca", "en"}

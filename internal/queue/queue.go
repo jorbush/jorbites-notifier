@@ -234,6 +234,8 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		return q.processMentionInCommentNotification(notification)
 	case models.TypeNewQuest:
 		return q.processNewQuestNotification(notification)
+	case models.TypeNewChallenge:
+		return q.processNewChallengeNotification(notification)
 	default:
 		log.Printf("Unknown notification type: %s", notification.Type)
 		return false
@@ -584,3 +586,46 @@ func (q *Queue) processNewQuestNotification(notification models.Notification) bo
 	return emailSuccess
 }
 
+func (q *Queue) processNewChallengeNotification(notification models.Notification) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
+	var emailSuccess bool
+	if err != nil {
+		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		emailSuccess = false
+	} else {
+		log.Printf("Sending new challenge notification to %d users with notifications enabled", len(users))
+		successCount := 0
+		failCount := 0
+		for _, user := range users {
+			userNotification := models.Notification{
+				ID:        uuid.New().String(),
+				Type:      notification.Type,
+				Status:    models.StatusProcessing,
+				Recipient: user.Email,
+				Metadata:  notification.Metadata,
+			}
+			language := i18n.GetUserLanguage(&user)
+			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
+			if err != nil {
+				log.Printf("Error sending email to %s: %v", user.Email, err)
+				failCount++
+				continue
+			}
+			if success {
+				successCount++
+			} else {
+				failCount++
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		log.Printf("New challenge notification results: %d successful, %d failed", successCount, failCount)
+		emailSuccess = successCount > 0
+	}
+
+	q.broadcastPushNotificationMultiLang(notification, "/events/challenge_of_the_week")
+
+	return emailSuccess
+}
