@@ -237,6 +237,29 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
 		<a href="{{.SiteURL}}/quests/{{.Metadata.questId}}" class="button">View Quest</a>
 	`,
 	},
+	models.TypeNewChallenge: {
+		"es": `
+		<h2>¡Nuevo Reto de la Semana! 🏆</h2>
+		<p>Hola,</p>
+		<p>Esta semana el reto es: <strong>{{.Metadata.title}}</strong></p>
+		<p>{{.Metadata.description}}</p>
+		<a href="{{.SiteURL}}/events/challenge_of_the_week" class="button">Ver Reto</a>
+	`,
+		"ca": `
+		<h2>Nou Repte de la Setmana! 🏆</h2>
+		<p>Hola,</p>
+		<p>Aquest setmana el repte és: <strong>{{.Metadata.title}}</strong></p>
+		<p>{{.Metadata.description}}</p>
+		<a href="{{.SiteURL}}/events/challenge_of_the_week" class="button">Veure Repte</a>
+	`,
+		"en": `
+		<h2>New Challenge of the Week! 🏆</h2>
+		<p>Hi there,</p>
+		<p>This week's challenge is: <strong>{{.Metadata.title}}</strong></p>
+		<p>{{.Metadata.description}}</p>
+		<a href="{{.SiteURL}}/events/challenge_of_the_week" class="button">View Challenge</a>
+	`,
+	},
 	models.TypeQuestFulfilled: {
 		"es": `
 		<h2>¡Tu Misión ha sido completada! 🏆</h2>
@@ -314,6 +337,11 @@ var emailSubjects = map[models.NotificationType]map[string]string{
 		"es": "¡Tu Misión ha sido completada! - Jorbites",
 		"ca": "La teva Missió ha estat completada! - Jorbites",
 		"en": "Your Quest has been fulfilled! - Jorbites",
+	},
+	models.TypeNewChallenge: {
+		"es": "¡Nuevo Reto de la Semana! - Jorbites",
+		"ca": "Nou Repte de la Setmana! - Jorbites",
+		"en": "New Challenge of the Week! - Jorbites",
 	},
 }
 
@@ -517,6 +545,16 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 				return PushNotificationTexts{Title: "¡Misión Completada!", Message: fulfilledByName + " ha completado tu misión"}
 			}
 			return PushNotificationTexts{Title: "¡Misión Completada!", Message: "Tu misión ha sido completada"}
+		}
+
+	case models.TypeNewChallenge:
+		switch language {
+		case "ca":
+			return PushNotificationTexts{Title: "Nou Repte de la Setmana! 🏆", Message: "Descobreix el nou repte setmanal a Jorbites"}
+		case "en":
+			return PushNotificationTexts{Title: "New Challenge of the Week! 🏆", Message: "Discover this week's new challenge on Jorbites"}
+		default: // es
+			return PushNotificationTexts{Title: "¡Nuevo Reto de la Semana! 🏆", Message: "Descubre el nuevo reto semanal en Jorbites"}
 		}
 
 	default:

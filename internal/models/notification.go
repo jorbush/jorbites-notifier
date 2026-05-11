@@ -21,6 +21,7 @@ const (
 	TypeEventEndingSoon        NotificationType = "EVENT_ENDING_SOON"
 	TypeNewQuest               NotificationType = "NEW_QUEST"
 	TypeQuestFulfilled         NotificationType = "QUEST_FULFILLED"
+	TypeNewChallenge           NotificationType = "NEW_CHALLENGE"
 )
 
 type Notification struct {
