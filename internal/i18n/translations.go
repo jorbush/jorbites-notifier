@@ -243,21 +243,21 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
 		<p>Hola,</p>
 		<p>Esta semana el reto es: <strong>{{.Metadata.title}}</strong></p>
 		<p>{{.Metadata.description}}</p>
-		<a href="{{.SiteURL}}/events/challenge_of_the_week" class="button">Ver Reto</a>
+		<a href="{{.SiteURL}}/events" class="button">Ver Reto</a>
 	`,
 		"ca": `
 		<h2>Nou Repte de la Setmana! 🏆</h2>
 		<p>Hola,</p>
 		<p>Aquest setmana el repte és: <strong>{{.Metadata.title}}</strong></p>
 		<p>{{.Metadata.description}}</p>
-		<a href="{{.SiteURL}}/events/challenge_of_the_week" class="button">Veure Repte</a>
+		<a href="{{.SiteURL}}/events" class="button">Veure Repte</a>
 	`,
 		"en": `
 		<h2>New Challenge of the Week! 🏆</h2>
 		<p>Hi there,</p>
 		<p>This week's challenge is: <strong>{{.Metadata.title}}</strong></p>
 		<p>{{.Metadata.description}}</p>
-		<a href="{{.SiteURL}}/events/challenge_of_the_week" class="button">View Challenge</a>
+		<a href="{{.SiteURL}}/events" class="button">View Challenge</a>
 	`,
 	},
 	models.TypeQuestFulfilled: {

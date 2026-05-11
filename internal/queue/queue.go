@@ -625,7 +625,7 @@ func (q *Queue) processNewChallengeNotification(notification models.Notification
 		emailSuccess = successCount > 0
 	}
 
-	q.broadcastPushNotificationMultiLang(notification, "/events/challenge_of_the_week")
+	q.broadcastPushNotificationMultiLang(notification, "/events")
 
 	return emailSuccess
 }
