@@ -587,6 +587,10 @@ func (q *Queue) processNewQuestNotification(notification models.Notification) bo
 }
 
 func (q *Queue) processNewChallengeNotification(notification models.Notification) bool {
+	if desc, ok := notification.Metadata["description"]; ok {
+		notification.Metadata["description"] = strings.ReplaceAll(desc, "_", " ")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
