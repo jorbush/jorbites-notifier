@@ -653,7 +653,9 @@ func (q *Queue) processNewBadgeNotification(notification models.Notification) bo
 		notification.Metadata = make(map[string]string)
 	}
 	notification.Metadata["userId"] = user.ID.Hex()
-
+	if badge_name, ok := notification.Metadata["badgeName"]; ok && strings.Contains(badge_name, "_") {
+		notification.Metadata["badgeName"] = strings.ReplaceAll(badge_name, "_", " ")
+	}
 	if user.EmailNotifications {
 		success, err = q.emailSender.SendNotificationEmail(notification, language)
 		if err != nil {
