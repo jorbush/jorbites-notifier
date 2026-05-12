@@ -225,6 +225,26 @@ Broadcast sent every Monday at 08:00 AM (Europe/Madrid) to all subscribed users 
 }
 ```
 
+### NEW_BADGE
+
+Sent when a user earns a new badge in the application.
+
+**Metadata Fields**:
+- `badgeName`: Name/ID of the newly earned badge (e.g. "level_100")
+- `userId`: ID of the user receiving the badge
+
+**Example**:
+```json
+{
+  "type": "NEW_BADGE",
+  "recipient": "user@example.com",
+  "metadata": {
+    "badgeName": "level_100",
+    "userId": "12345"
+  }
+}
+```
+
 ## Adding New Notification Types
 
 To add a new notification type:

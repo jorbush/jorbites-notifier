@@ -236,6 +236,8 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		return q.processNewQuestNotification(notification)
 	case models.TypeNewChallenge:
 		return q.processNewChallengeNotification(notification)
+	case models.TypeNewBadge:
+		return q.processNewBadgeNotification(notification)
 	default:
 		log.Printf("Unknown notification type: %s", notification.Type)
 		return false
@@ -632,4 +634,64 @@ func (q *Queue) processNewChallengeNotification(notification models.Notification
 	q.broadcastPushNotificationMultiLang(notification, "/events")
 
 	return emailSuccess
+}
+
+func (q *Queue) processNewBadgeNotification(notification models.Notification) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	user, err := q.mongoDB.GetUserByEmail(ctx, notification.Recipient)
+	if err != nil {
+		log.Printf("Error fetching user for recipient %s: %v", notification.Recipient, err)
+		return false
+	}
+
+	language := i18n.GetUserLanguage(user)
+	var success bool = true
+
+	if notification.Metadata == nil {
+		notification.Metadata = make(map[string]string)
+	}
+	notification.Metadata["userId"] = user.ID.Hex()
+
+	if user.EmailNotifications {
+		success, err = q.emailSender.SendNotificationEmail(notification, language)
+		if err != nil {
+			log.Printf("Error sending email for notification %s: %v", notification.ID, err)
+			success = false
+		}
+	} else {
+		log.Printf("Skipping email for %s (notifications disabled)", notification.Recipient)
+	}
+
+	pushTexts := i18n.GetPushNotificationText(notification.Type, language, notification.Metadata)
+	userID := user.ID.Hex()
+	url := "/profile/" + userID
+
+	if pushTexts.Title != "" {
+		log.Printf("Sending push notification '%s' to user %s", pushTexts.Title, userID)
+
+		subsCtx, subsCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer subsCancel()
+
+		subs, err := q.mongoDB.GetPushSubscriptionsForUsers(subsCtx, []string{userID})
+		if err != nil {
+			log.Printf("Error fetching push subscriptions for user %s: %v", userID, err)
+		} else {
+			log.Printf("Found %d push subscriptions for user %s", len(subs), userID)
+			for _, sub := range subs {
+				go func(s models.PushSubscription) {
+					if err := q.pushSender.SendNotification(s, pushTexts.Title, pushTexts.Message, url); err != nil {
+						log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
+					} else {
+						log.Printf("Push sent to subscription %s", s.ID.Hex())
+					}
+				}(sub)
+			}
+		}
+	} else {
+		log.Printf("No push notification title set for type %s", notification.Type)
+	}
+
+	return success
 }

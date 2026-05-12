@@ -22,6 +22,7 @@ const (
 	TypeNewQuest               NotificationType = "NEW_QUEST"
 	TypeQuestFulfilled         NotificationType = "QUEST_FULFILLED"
 	TypeNewChallenge           NotificationType = "NEW_CHALLENGE"
+	TypeNewBadge               NotificationType = "NEW_BADGE"
 )
 
 type Notification struct {
