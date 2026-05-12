@@ -649,6 +649,11 @@ func (q *Queue) processNewBadgeNotification(notification models.Notification) bo
 	language := i18n.GetUserLanguage(user)
 	var success bool = true
 
+	if notification.Metadata == nil {
+		notification.Metadata = make(map[string]string)
+	}
+	notification.Metadata["userId"] = user.ID.Hex()
+
 	if user.EmailNotifications {
 		success, err = q.emailSender.SendNotificationEmail(notification, language)
 		if err != nil {
@@ -659,7 +664,7 @@ func (q *Queue) processNewBadgeNotification(notification models.Notification) bo
 		log.Printf("Skipping email for %s (notifications disabled)", notification.Recipient)
 	}
 
-	pushTexts := i18n.GetPushNotificationText(models.TypeNewBadge, language, notification.Metadata)
+	pushTexts := i18n.GetPushNotificationText(notification.Type, language, notification.Metadata)
 	userID := user.ID.Hex()
 	url := "/profile/" + userID
 
