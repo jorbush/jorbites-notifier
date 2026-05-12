@@ -280,6 +280,29 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
 		<a href="{{.SiteURL}}/quests/{{.Metadata.questId}}" class="button">View Submission</a>
 	`,
 	},
+	models.TypeNewBadge: {
+		"es": `
+		<h2>¡Has ganado una nueva insignia! 🎖️</h2>
+		<p>Hola,</p>
+		<p>¡Felicidades! Has ganado una nueva insignia en Jorbites.</p>
+		<p>La insignia que has conseguido es: <strong>{{.Metadata.badgeName}}</strong></p>
+		<a href="{{.SiteURL}}/profile/{{.Metadata.userId}}" class="button">Ver Perfil</a>
+	`,
+		"ca": `
+		<h2>Has guanyat una nova insígnia! 🎖️</h2>
+		<p>Hola,</p>
+		<p>Felicitats! Has guanyat una nova insígnia a Jorbites.</p>
+		<p>La insígnia que has aconseguit és: <strong>{{.Metadata.badgeName}}</strong></p>
+		<a href="{{.SiteURL}}/profile/{{.Metadata.userId}}" class="button">Veure Perfil</a>
+	`,
+		"en": `
+		<h2>You've earned a new badge! 🎖️</h2>
+		<p>Hi there,</p>
+		<p>Congratulations! You've earned a new badge on Jorbites.</p>
+		<p>The badge you got is: <strong>{{.Metadata.badgeName}}</strong></p>
+		<a href="{{.SiteURL}}/profile/{{.Metadata.userId}}" class="button">View Profile</a>
+	`,
+	},
 }
 
 var emailSubjects = map[models.NotificationType]map[string]string{
@@ -342,6 +365,11 @@ var emailSubjects = map[models.NotificationType]map[string]string{
 		"es": "¡Nuevo Reto de la Semana! - Jorbites",
 		"ca": "Nou Repte de la Setmana! - Jorbites",
 		"en": "New Challenge of the Week! - Jorbites",
+	},
+	models.TypeNewBadge: {
+		"es": "¡Has ganado una nueva insignia! - Jorbites",
+		"ca": "Has guanyat una nova insígnia! - Jorbites",
+		"en": "You've earned a new badge! - Jorbites",
 	},
 }
 
@@ -555,6 +583,17 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 			return PushNotificationTexts{Title: "New Challenge of the Week! 🏆", Message: "Discover this week's new challenge on Jorbites"}
 		default: // es
 			return PushNotificationTexts{Title: "¡Nuevo Reto de la Semana! 🏆", Message: "Descubre el nuevo reto semanal en Jorbites"}
+		}
+
+	case models.TypeNewBadge:
+		badgeName := metadata["badgeName"]
+		switch language {
+		case "ca":
+			return PushNotificationTexts{Title: "Nova Insígnia! 🎖️", Message: "Has guanyat la insígnia: " + badgeName}
+		case "en":
+			return PushNotificationTexts{Title: "New Badge! 🎖️", Message: "You earned the badge: " + badgeName}
+		default: // es
+			return PushNotificationTexts{Title: "¡Nueva Insignia! 🎖️", Message: "Has ganado la insignia: " + badgeName}
 		}
 
 	default:

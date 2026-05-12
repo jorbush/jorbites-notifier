@@ -71,6 +71,7 @@ func TestGetEmailTemplateContent(t *testing.T) {
 		models.TypeNewQuest,
 		models.TypeQuestFulfilled,
 		models.TypeNewChallenge,
+		models.TypeNewBadge,
 	}
 
 	languages := []string{"es", "ca", "en"}
@@ -113,6 +114,7 @@ func TestGetEmailSubject(t *testing.T) {
 		models.TypeNewQuest,
 		models.TypeQuestFulfilled,
 		models.TypeNewChallenge,
+		models.TypeNewBadge,
 	}
 
 	languages := []string{"es", "ca", "en"}
@@ -330,6 +332,30 @@ func TestGetPushNotificationText(t *testing.T) {
 			wantTitle: true,
 			wantMsg:   true,
 		},
+		{
+			name:      "TypeNewBadge - Spanish",
+			notifType: models.TypeNewBadge,
+			lang:      "es",
+			metadata:  map[string]string{"badgeName": "level_100"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeNewBadge - Catalan",
+			notifType: models.TypeNewBadge,
+			lang:      "ca",
+			metadata:  map[string]string{"badgeName": "level_100"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeNewBadge - English",
+			notifType: models.TypeNewBadge,
+			lang:      "en",
+			metadata:  map[string]string{"badgeName": "level_100"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -421,6 +447,7 @@ func TestAllNotificationTypesHaveTranslations(t *testing.T) {
 		models.TypeNewQuest,
 		models.TypeQuestFulfilled,
 		models.TypeNewChallenge,
+		models.TypeNewBadge,
 	}
 
 	languages := []string{"es", "ca", "en"}
