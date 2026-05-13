@@ -72,6 +72,7 @@ func TestGetEmailTemplateContent(t *testing.T) {
 		models.TypeQuestFulfilled,
 		models.TypeNewChallenge,
 		models.TypeNewBadge,
+		models.TypeVerified,
 	}
 
 	languages := []string{"es", "ca", "en"}
@@ -115,6 +116,7 @@ func TestGetEmailSubject(t *testing.T) {
 		models.TypeQuestFulfilled,
 		models.TypeNewChallenge,
 		models.TypeNewBadge,
+		models.TypeVerified,
 	}
 
 	languages := []string{"es", "ca", "en"}
@@ -448,6 +450,7 @@ func TestAllNotificationTypesHaveTranslations(t *testing.T) {
 		models.TypeQuestFulfilled,
 		models.TypeNewChallenge,
 		models.TypeNewBadge,
+		models.TypeVerified,
 	}
 
 	languages := []string{"es", "ca", "en"}

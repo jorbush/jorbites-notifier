@@ -303,6 +303,26 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
 		<a href="{{.SiteURL}}/profile/{{.Metadata.userId}}" class="button">View Profile</a>
 	`,
 	},
+	models.TypeVerified: {
+		"es": `
+		<h2>¡Cuenta Verificada! ✅</h2>
+		<p>Hola,</p>
+		<p>¡Felicidades! Has publicado 30 recetas y tu cuenta ha sido verificada.</p>
+		<a href="{{.SiteURL}}/profile/{{.Metadata.userId}}" class="button">Ver Perfil</a>
+	`,
+		"ca": `
+		<h2>Compte Verificat! ✅</h2>
+		<p>Hola,</p>
+		<p>Felicitats! Has publicat 30 receptes i el teu compte ha estat verificat.</p>
+		<a href="{{.SiteURL}}/profile/{{.Metadata.userId}}" class="button">Veure Perfil</a>
+	`,
+		"en": `
+		<h2>Account Verified! ✅</h2>
+		<p>Hi there,</p>
+		<p>Congratulations! You've posted 30 recipes and your account is now verified.</p>
+		<a href="{{.SiteURL}}/profile/{{.Metadata.userId}}" class="button">View Profile</a>
+	`,
+	},
 }
 
 var emailSubjects = map[models.NotificationType]map[string]string{
@@ -367,9 +387,14 @@ var emailSubjects = map[models.NotificationType]map[string]string{
 		"en": "New Challenge of the Week! - Jorbites",
 	},
 	models.TypeNewBadge: {
-		"es": "¡Has ganado una nueva insignia! - Jorbites",
-		"ca": "Has guanyat una nova insígnia! - Jorbites",
-		"en": "You've earned a new badge! - Jorbites",
+		"es": "¡Nueva Insignia Obtenida! - Jorbites",
+		"ca": "Nova Insígnia Obtinguda! - Jorbites",
+		"en": "New Badge Earned! - Jorbites",
+	},
+	models.TypeVerified: {
+		"es": "¡Cuenta Verificada! ✅ - Jorbites",
+		"ca": "Compte Verificat! ✅ - Jorbites",
+		"en": "Account Verified! ✅ - Jorbites",
 	},
 }
 
@@ -594,6 +619,16 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 			return PushNotificationTexts{Title: "New Badge! 🎖️", Message: "You earned the badge: " + badgeName}
 		default: // es
 			return PushNotificationTexts{Title: "¡Nueva Insignia! 🎖️", Message: "Has ganado la insignia: " + badgeName}
+		}
+
+	case models.TypeVerified:
+		switch language {
+		case "ca":
+			return PushNotificationTexts{Title: "Compte Verificat! ✅", Message: "Felicitats! Has publicat 30 receptes i el teu compte ha estat verificat."}
+		case "en":
+			return PushNotificationTexts{Title: "Account Verified! ✅", Message: "Congratulations! You've posted 30 recipes and your account is now verified."}
+		default: // es
+			return PushNotificationTexts{Title: "¡Cuenta Verificada! ✅", Message: "¡Felicidades! Has publicado 30 recetas y tu cuenta ha sido verificada."}
 		}
 
 	default:
