@@ -245,6 +245,24 @@ Sent when a user earns a new badge in the application.
 }
 ```
 
+### VERIFIED
+
+Sent when a user posts their 30th recipe and their account becomes officially verified.
+
+**Metadata Fields**:
+- `userId`: ID of the user becoming verified
+
+**Example**:
+```json
+{
+  "type": "VERIFIED",
+  "recipient": "user@example.com",
+  "metadata": {
+    "userId": "12345"
+  }
+}
+```
+
 ## Adding New Notification Types
 
 To add a new notification type:
