@@ -46,7 +46,7 @@ Adds a new notification to the processing queue.
 
 | Field | Type | Description | Required |
 |-------|------|-------------|----------|
-| `type` | string | Type of notification (see [Notification Types](./notification-types.md)) | Yes |
+| `type` | string | Type of notification (see [Notification Types](./notification_types.md)) | Yes |
 | `recipient` | string | Email address of the recipient | No |
 | `metadata` | object | Additional data needed for the notification | No |
 

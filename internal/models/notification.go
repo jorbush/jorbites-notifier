@@ -24,6 +24,8 @@ const (
 	TypeNewChallenge           NotificationType = "NEW_CHALLENGE"
 	TypeNewBadge               NotificationType = "NEW_BADGE"
 	TypeVerified               NotificationType = "VERIFIED"
+	TypeNewVotation            NotificationType = "NEW_VOTATION"
+	TypeVotationResult         NotificationType = "VOTATION_RESULT"
 )
 
 type Notification struct {

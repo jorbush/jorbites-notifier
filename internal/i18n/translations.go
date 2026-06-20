@@ -260,6 +260,52 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
 		<a href="{{.SiteURL}}/events" class="button">View Challenge</a>
 	`,
 	},
+	models.TypeNewVotation: {
+		"es": `
+		<h2>¡Nueva votación disponible! 🗳️</h2>
+		<p>Hola,</p>
+		<p>¡Ya puedes votar por la <strong>Receta de la {{if eq .Metadata.category "week"}}Semana{{else if eq .Metadata.category "month"}}Mes{{else}}Año{{end}} ({{.Metadata.periodKey}})</strong> en Jorbites!</p>
+		<p>Entra en la sección de eventos y vota por tu receta favorita entre las candidatas.</p>
+		<a href="{{.SiteURL}}/events" class="button">Votar Ahora</a>
+	`,
+		"ca": `
+		<h2>Nova votació disponible! 🗳️</h2>
+		<p>Hola,</p>
+		<p>¡Ja pots votar per la <strong>Recepta de la {{if eq .Metadata.category "week"}}Setmana{{else if eq .Metadata.category "month"}}Mes{{else}}Any{{end}} ({{.Metadata.periodKey}})</strong> a Jorbites!</p>
+		<p>Entra a la secció d'esdeveniments i vota per la teva recepta preferida entre les candidates.</p>
+		<a href="{{.SiteURL}}/events" class="button">Votar Ara</a>
+	`,
+		"en": `
+		<h2>New voting available! 🗳️</h2>
+		<p>Hi there,</p>
+		<p>You can now vote for the <strong>Recipe of the {{if eq .Metadata.category "week"}}Week{{else if eq .Metadata.category "month"}}Month{{else}}Year{{end}} ({{.Metadata.periodKey}})</strong> on Jorbites!</p>
+		<p>Go to the events section and cast your vote for your favorite candidate recipe.</p>
+		<a href="{{.SiteURL}}/events" class="button">Vote Now</a>
+	`,
+	},
+	models.TypeVotationResult: {
+		"es": `
+		<h2>¡Tenemos ganador de la Receta de la {{if eq .Metadata.category "week"}}Semana{{else if eq .Metadata.category "month"}}Mes{{else}}Año{{end}}! 🏆</h2>
+		<p>Hola,</p>
+		<p>La votación para la <strong>Receta de la {{if eq .Metadata.category "week"}}Semana{{else if eq .Metadata.category "month"}}Mes{{else}}Año{{end}} ({{.Metadata.periodKey}})</strong> ha finalizado.</p>
+		<p>La receta ganadora es <strong>{{.Metadata.recipeTitle}}</strong>, cocinada por <strong>{{.Metadata.winnerName}}</strong>. ¡Felicidades!</p>
+		<a href="{{.SiteURL}}/events" class="button">Ver Resultado</a>
+	`,
+		"ca": `
+		<h2>¡Tenim guanyador de la Recepta de la {{if eq .Metadata.category "week"}}Setmana{{else if eq .Metadata.category "month"}}Mes{{else}}Any{{end}}! 🏆</h2>
+		<p>Hola,</p>
+		<p>La votació per a la <strong>Recepta de la {{if eq .Metadata.category "week"}}Setmana{{else if eq .Metadata.category "month"}}Mes{{else}}Any{{end}} ({{.Metadata.periodKey}})</strong> ha finalitzat.</p>
+		<p>La recepta guanyadora és <strong>{{.Metadata.recipeTitle}}</strong>, cuinada per <strong>{{.Metadata.winnerName}}</strong>. Felicitats!</p>
+		<a href="{{.SiteURL}}/events" class="button">Veure Resultat</a>
+	`,
+		"en": `
+		<h2>Winner of the Recipe of the {{if eq .Metadata.category "week"}}Week{{else if eq .Metadata.category "month"}}Month{{else}}Year{{end}}! 🏆</h2>
+		<p>Hi there,</p>
+		<p>The voting for the <strong>Recipe of the {{if eq .Metadata.category "week"}}Week{{else if eq .Metadata.category "month"}}Month{{else}}Year{{end}} ({{.Metadata.periodKey}})</strong> has ended.</p>
+		<p>The winning recipe is <strong>{{.Metadata.recipeTitle}}</strong>, cooked by <strong>{{.Metadata.winnerName}}</strong>. Congratulations!</p>
+		<a href="{{.SiteURL}}/events" class="button">View Result</a>
+	`,
+	},
 	models.TypeQuestFulfilled: {
 		"es": `
 		<h2>¡Tu Misión ha sido completada! 🏆</h2>
@@ -385,6 +431,16 @@ var emailSubjects = map[models.NotificationType]map[string]string{
 		"es": "¡Nuevo Reto de la Semana! - Jorbites",
 		"ca": "Nou Repte de la Setmana! - Jorbites",
 		"en": "New Challenge of the Week! - Jorbites",
+	},
+	models.TypeNewVotation: {
+		"es": "¡Nueva Votación Disponible! - Jorbites",
+		"ca": "Nova Votació Disponible! - Jorbites",
+		"en": "New Voting Available! - Jorbites",
+	},
+	models.TypeVotationResult: {
+		"es": "¡Resultado de la Votación! 🏆 - Jorbites",
+		"ca": "Resultat de la Votació! 🏆 - Jorbites",
+		"en": "Voting Results Announced! 🏆 - Jorbites",
 	},
 	models.TypeNewBadge: {
 		"es": "¡Nueva Insignia Obtenida! - Jorbites",
@@ -608,6 +664,71 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 			return PushNotificationTexts{Title: "New Challenge of the Week! 🏆", Message: "Discover this week's new challenge on Jorbites"}
 		default: // es
 			return PushNotificationTexts{Title: "¡Nuevo Reto de la Semana! 🏆", Message: "Descubre el nuevo reto semanal en Jorbites"}
+		}
+
+	case models.TypeNewVotation:
+		category := metadata["category"]
+		var categoryTextEs, categoryTextCa, categoryTextEn string
+		switch category {
+		case "month":
+			categoryTextEs = "Mes"
+			categoryTextCa = "Mes"
+			categoryTextEn = "Month"
+		case "year":
+			categoryTextEs = "Año"
+			categoryTextCa = "Any"
+			categoryTextEn = "Year"
+		default:
+			categoryTextEs = "Semana"
+			categoryTextCa = "Setmana"
+			categoryTextEn = "Week"
+		}
+		switch language {
+		case "ca":
+			return PushNotificationTexts{Title: "Nova Votació Disponible! 🗳️", Message: "Ja pots votar per la Recepta de la " + categoryTextCa}
+		case "en":
+			return PushNotificationTexts{Title: "New Voting Available! 🗳️", Message: "You can now vote for the Recipe of the " + categoryTextEn}
+		default: // es
+			return PushNotificationTexts{Title: "¡Nueva Votación Disponible! 🗳️", Message: "Ya puedes votar por la Receta de la " + categoryTextEs}
+		}
+
+	case models.TypeVotationResult:
+		category := metadata["category"]
+		recipeTitle := metadata["recipeTitle"]
+		var categoryTextEs, categoryTextCa, categoryTextEn string
+		switch category {
+		case "month":
+			categoryTextEs = "Mes"
+			categoryTextCa = "Mes"
+			categoryTextEn = "Month"
+		case "year":
+			categoryTextEs = "Año"
+			categoryTextCa = "Any"
+			categoryTextEn = "Year"
+		default:
+			categoryTextEs = "Semana"
+			categoryTextCa = "Setmana"
+			categoryTextEn = "Week"
+		}
+		switch language {
+		case "ca":
+			msg := "Coneix la millor recepta de la " + categoryTextCa
+			if recipeTitle != "" {
+				msg = "La guanyadora és: " + recipeTitle
+			}
+			return PushNotificationTexts{Title: "Guanyador de la Recepta de la " + categoryTextCa + "! 🏆", Message: msg}
+		case "en":
+			msg := "Meet the best recipe from the last " + categoryTextEn
+			if recipeTitle != "" {
+				msg = "The winner is: " + recipeTitle
+			}
+			return PushNotificationTexts{Title: "Winner of the Recipe of the " + categoryTextEn + "! 🏆", Message: msg}
+		default: // es
+			msg := "Conoce la mejor receta de la " + categoryTextEs
+			if recipeTitle != "" {
+				msg = "La ganadora es: " + recipeTitle
+			}
+			return PushNotificationTexts{Title: "¡Ganador de la Receta de la " + categoryTextEs + "! 🏆", Message: msg}
 		}
 
 	case models.TypeNewBadge:
