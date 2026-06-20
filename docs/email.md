@@ -37,12 +37,26 @@ Templates use Go's built-in `text/template` package for variable substitution an
 
 ### Supported Notification Types
 
-1. **NEW_COMMENT**: Sent when a user comments on a recipe
-2. **NEW_LIKE**: Sent when a user likes a recipe
-3. **NEW_RECIPE**: Sent when a new recipe is published
-4. **NOTIFICATIONS_ACTIVATED**: Sent when a user activates notifications
+The email service supports the following notification types:
 
-Each notification type has its own subject line and body content, while maintaining the consistent header and footer.
+1. **NEW_COMMENT**: Sent when a user comments on a recipe.
+2. **NEW_LIKE**: Sent when a user likes a recipe.
+3. **NEW_RECIPE**: Sent when a new recipe is published.
+4. **NOTIFICATIONS_ACTIVATED**: Sent when a user activates notifications.
+5. **FORGOT_PASSWORD**: Sent when a user requests a password reset.
+6. **MENTION_IN_COMMENT**: Sent when a user is mentioned in a recipe comment.
+7. **NEW_BLOG**: Sent when a new blog post is published (broadcast).
+8. **NEW_EVENT**: Sent when a new community event is published (broadcast).
+9. **EVENT_ENDING_SOON**: Sent 3 days before a community event ends to encourage participation (broadcast).
+10. **NEW_QUEST**: Sent when a new recipe request (mission/quest) is created (broadcast).
+11. **QUEST_FULFILLED**: Sent to notify the quest creator that someone submitted a recipe for their quest.
+12. **NEW_CHALLENGE**: Sent to all users announcing the new weekly challenge (broadcast).
+13. **NEW_BADGE**: Sent to a user when they earn a new achievement badge.
+14. **VERIFIED**: Sent to a user when they reach 30 recipes and their profile becomes verified.
+15. **NEW_VOTATION**: Sent to announce the opening of a new Recipe of the Week/Month/Year voting poll (broadcast).
+16. **VOTATION_RESULT**: Sent to announce the winning recipe and author of the Recipe of the Week/Month/Year voting poll (broadcast).
+
+Each notification type has its own localized subject lines and HTML body templates (available in English, Spanish, and Catalan) while maintaining a consistent overall layout.
 
 ## Configuration
 

@@ -263,6 +263,50 @@ Sent when a user posts their 30th recipe and their account becomes officially ve
 }
 ```
 
+### NEW_VOTATION
+
+Broadcast sent when a new Top Recipe voting session is opened.
+
+**Metadata Fields**:
+- `category`: `"week"` | `"month"` | `"year"`
+- `periodKey`: The period representation (e.g., `"2026-W25"`, `"2026-06"`, `"2026"`)
+
+**Example**:
+```json
+{
+  "type": "NEW_VOTATION",
+  "metadata": {
+    "category": "week",
+    "periodKey": "2026-W25"
+  }
+}
+```
+
+### VOTATION_RESULT
+
+Broadcast sent when a Top Recipe voting session is closed, announcing the winner.
+
+**Metadata Fields**:
+- `category`: `"week"` | `"month"` | `"year"`
+- `periodKey`: The period representation (e.g., `"2026-W25"`)
+- `recipeId`: ID of the winning recipe
+- `recipeTitle`: Title of the winning recipe
+- `winnerName`: Name of the winning recipe's author
+
+**Example**:
+```json
+{
+  "type": "VOTATION_RESULT",
+  "metadata": {
+    "category": "week",
+    "periodKey": "2026-W25",
+    "recipeId": "67890",
+    "recipeTitle": "Delicious Carbonara",
+    "winnerName": "Chef Mario"
+  }
+}
+```
+
 ## Adding New Notification Types
 
 To add a new notification type:
