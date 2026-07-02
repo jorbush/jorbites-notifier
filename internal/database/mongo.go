@@ -41,7 +41,7 @@ func (m *MongoDB) Close(ctx context.Context) error {
 func (m *MongoDB) GetUsersWithNotificationsEnabled(ctx context.Context) ([]models.User, error) {
 	collection := m.db.Collection("User")
 
-	filter := bson.D{{Key: "emailNotifications", Value: true}}
+	filter := bson.D{bson.E{Key: "emailNotifications", Value: true}}
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -74,9 +74,9 @@ func (m *MongoDB) GetUsersMentionedInComment(ctx context.Context, mentionedUsers
 		return []models.User{}, nil
 	}
 	filter := bson.D{
-		{Key: "_id", Value: bson.D{{Key: "$in", Value: objectIds}}},
-		{Key: "emailNotifications", Value: true},
-		{Key: "email", Value: bson.D{{Key: "$ne", Value: recipientEmail}}},
+		bson.E{Key: "_id", Value: bson.D{bson.E{Key: "$in", Value: objectIds}}},
+		bson.E{Key: "emailNotifications", Value: true},
+		bson.E{Key: "email", Value: bson.D{bson.E{Key: "$ne", Value: recipientEmail}}},
 	}
 
 	cursor, err := collection.Find(ctx, filter)
@@ -106,7 +106,7 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 		}
 	}
 
-	filter := bson.D{{Key: "userId", Value: bson.D{{Key: "$in", Value: objectIDs}}}}
+	filter := bson.D{bson.E{Key: "userId", Value: bson.D{bson.E{Key: "$in", Value: objectIDs}}}}
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -126,7 +126,7 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 		slog.Info("No subscriptions found for objectIDs", "objectIDs", objectIDs)
 
 		// Attempt query with strings if 0 found - safety net
-		filterString := bson.D{{Key: "userId", Value: bson.D{{Key: "$in", Value: userIDs}}}}
+		filterString := bson.D{bson.E{Key: "userId", Value: bson.D{bson.E{Key: "$in", Value: userIDs}}}}
 		cursorString, err := collection.Find(ctx, filterString)
 		if err == nil {
 			var stringSubs []models.PushSubscription
@@ -147,7 +147,7 @@ func (m *MongoDB) DeletePushSubscription(ctx context.Context, id string) error {
 		return err
 	}
 
-	filter := bson.D{{Key: "_id", Value: objID}}
+	filter := bson.D{bson.E{Key: "_id", Value: objID}}
 	_, err = collection.DeleteOne(ctx, filter)
 	return err
 }
@@ -171,7 +171,7 @@ func (m *MongoDB) GetAllPushSubscriptions(ctx context.Context) ([]models.PushSub
 func (m *MongoDB) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	collection := m.db.Collection("User")
 	var user models.User
-	filter := bson.D{{Key: "email", Value: email}}
+	filter := bson.D{bson.E{Key: "email", Value: email}}
 	err := collection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func (m *MongoDB) GetUserByID(ctx context.Context, id string) (*models.User, err
 	if err != nil {
 		return nil, err
 	}
-	filter := bson.D{{Key: "_id", Value: objID}}
+	filter := bson.D{bson.E{Key: "_id", Value: objID}}
 	err = collection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		return nil, err
