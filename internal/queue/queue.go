@@ -2,7 +2,9 @@ package queue
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -15,6 +17,34 @@ import (
 	"github.com/jorbush/jorbites-notifier/internal/models"
 	"github.com/jorbush/jorbites-notifier/internal/push"
 )
+
+var log = struct {
+	Printf  func(string, ...any)
+	Println func(...any)
+	Fatalf  func(string, ...any)
+}{
+	Printf: func(format string, args ...any) {
+		msg := fmt.Sprintf(format, args...)
+		// Distinguish errors in format if we want, or just log everything as Info
+		if strings.HasPrefix(strings.ToLower(msg), "error") || strings.Contains(strings.ToLower(msg), "fail") {
+			slog.Error(msg)
+		} else {
+			slog.Info(msg)
+		}
+	},
+	Println: func(args ...any) {
+		msg := fmt.Sprint(args...)
+		if strings.HasPrefix(strings.ToLower(msg), "error") || strings.Contains(strings.ToLower(msg), "fail") {
+			slog.Error(msg)
+		} else {
+			slog.Info(msg)
+		}
+	},
+	Fatalf: func(format string, args ...any) {
+		slog.Error(fmt.Sprintf(format, args...))
+		os.Exit(1)
+	},
+}
 
 type Queue struct {
 	notifications []models.Notification

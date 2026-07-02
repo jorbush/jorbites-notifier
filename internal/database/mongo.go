@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/jorbush/jorbites-notifier/config"
@@ -24,7 +24,7 @@ func NewMongoDB(cfg *config.Config) (*MongoDB, error) {
 		return nil, err
 	}
 
-	log.Println("Connected to MongoDB successfully")
+	slog.Info("Connected to MongoDB successfully")
 	db := client.Database(cfg.MongoDB)
 
 	return &MongoDB{
@@ -53,7 +53,7 @@ func (m *MongoDB) GetUsersWithNotificationsEnabled(ctx context.Context) ([]model
 		return nil, err
 	}
 
-	log.Printf("Found %d users with email notifications enabled", len(users))
+	slog.Info("Found users with email notifications enabled", "count", len(users))
 	return users, nil
 }
 
@@ -64,13 +64,13 @@ func (m *MongoDB) GetUsersMentionedInComment(ctx context.Context, mentionedUsers
 	for _, idStr := range mentionedUserIdsArray {
 		objectId, err := bson.ObjectIDFromHex(idStr)
 		if err != nil {
-			log.Printf("Invalid ObjectID: %s, error: %v", idStr, err)
+			slog.Warn("Invalid ObjectID", "id", idStr, "error", err)
 			continue // Skip invalid IDs
 		}
 		objectIds = append(objectIds, objectId)
 	}
 	if len(objectIds) == 0 {
-		log.Printf("No valid ObjectIDs found")
+		slog.Warn("No valid ObjectIDs found")
 		return []models.User{}, nil
 	}
 	filter := bson.D{
@@ -90,7 +90,7 @@ func (m *MongoDB) GetUsersMentionedInComment(ctx context.Context, mentionedUsers
 		return nil, err
 	}
 
-	log.Printf("Found %d users with email notifications enabled and mentioned in comment", len(users))
+	slog.Info("Found users with email notifications enabled and mentioned in comment", "count", len(users))
 	return users, nil
 }
 
@@ -102,7 +102,7 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 		if objID, err := bson.ObjectIDFromHex(id); err == nil {
 			objectIDs = append(objectIDs, objID)
 		} else {
-			log.Printf("Invalid user ID %s in GetPushSubscriptionsForUsers", id)
+			slog.Warn("Invalid user ID in GetPushSubscriptionsForUsers", "userId", id)
 		}
 	}
 
@@ -123,7 +123,7 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 	if len(subscriptions) == 0 && len(userIDs) > 0 {
 		// Fallback check for string IDs just in case?
 		// No, let's trust the schema but log
-		log.Printf("No subscriptions found for objectIDs: %v", objectIDs)
+		slog.Info("No subscriptions found for objectIDs", "objectIDs", objectIDs)
 
 		// Attempt query with strings if 0 found - safety net
 		filterString := bson.D{{Key: "userId", Value: bson.D{{Key: "$in", Value: userIDs}}}}
@@ -131,7 +131,7 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 		if err == nil {
 			var stringSubs []models.PushSubscription
 			if err := cursorString.All(ctx, &stringSubs); err == nil && len(stringSubs) > 0 {
-				log.Printf("Found subscriptions by string ID instead of ObjectID! Please fix user ID type in DB.")
+				slog.Warn("Found subscriptions by string ID instead of ObjectID! Please fix user ID type in DB.")
 				return stringSubs, nil
 			}
 		}
