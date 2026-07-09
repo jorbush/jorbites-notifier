@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -28,7 +29,10 @@ func (m *MultiHandler) Enabled(ctx context.Context, l slog.Level) bool {
 func (m *MultiHandler) Handle(ctx context.Context, r slog.Record) error {
 	for _, h := range m.handlers {
 		if h.Enabled(ctx, r.Level) {
-			_ = h.Handle(ctx, r)
+			if err := h.Handle(ctx, r); err != nil {
+				// Print to stderr to avoid recursive slog calls
+				fmt.Fprintf(os.Stderr, "log handler error: %v\n", err)
+			}
 		}
 	}
 	return nil
@@ -57,10 +61,11 @@ func Init() func() {
 	handlers = append(handlers, slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	var axiomHandler *adapter.Handler
-	token := os.Getenv("AXIOM_TOKEN")
 	dataset := os.Getenv("AXIOM_DATASET")
 
-	if token != "" && dataset != "" {
+	// The axiom-go SDK automatically reads the AXIOM_TOKEN from the environment.
+	// We only initialize the handler if AXIOM_DATASET is configured.
+	if dataset != "" {
 		var err error
 		axiomHandler, err = adapter.New(
 			adapter.SetDataset(dataset),

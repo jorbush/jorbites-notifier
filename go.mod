@@ -1,6 +1,7 @@
 module github.com/jorbush/jorbites-notifier
 
 go 1.25.0
+toolchain go1.26.1
 
 require (
 	github.com/SherClockHolmes/webpush-go v1.4.0

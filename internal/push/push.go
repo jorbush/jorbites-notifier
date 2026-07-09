@@ -53,7 +53,7 @@ func (p *PushSender) SendNotification(subscription models.PushSubscription, titl
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
 		slog.Info("Subscription expired or not found, deleting", "subscriptionId", subscription.ID.Hex())

@@ -15,7 +15,7 @@ func TestMultiHandlerAndServiceAttribute(t *testing.T) {
 	// Create MultiHandler
 	mh := NewMultiHandler(h1)
 
-	// Set default with service attribute
+	// Create logger with service attribute
 	logger := slog.New(mh).With("service", "test-service")
 
 	logger.InfoContext(context.Background(), "hello", "key", "val")

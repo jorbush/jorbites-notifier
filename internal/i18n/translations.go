@@ -491,12 +491,14 @@ func GetEmailTemplateContent(notificationType models.NotificationType, language 
 func GetEmailSubject(notificationType models.NotificationType, language string) string {
 	subjects, exists := emailSubjects[notificationType]
 	if !exists {
-		if language == "ca" {
+		switch language {
+		case "ca":
 			return "Notificació de Jorbites"
-		} else if language == "en" {
+		case "en":
 			return "Notification from Jorbites"
+		default:
+			return "Notificación de Jorbites"
 		}
-		return "Notificación de Jorbites"
 	}
 
 	subject, exists := subjects[language]

@@ -46,7 +46,7 @@ func (m *MongoDB) GetUsersWithNotificationsEnabled(ctx context.Context) ([]model
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var users []models.User
 	if err = cursor.All(ctx, &users); err != nil {
@@ -83,7 +83,7 @@ func (m *MongoDB) GetUsersMentionedInComment(ctx context.Context, mentionedUsers
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var users []models.User
 	if err = cursor.All(ctx, &users); err != nil {
@@ -111,7 +111,7 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var subscriptions []models.PushSubscription
 	if err = cursor.All(ctx, &subscriptions); err != nil {
@@ -129,6 +129,7 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 		filterString := bson.D{bson.E{Key: "userId", Value: bson.D{bson.E{Key: "$in", Value: userIDs}}}}
 		cursorString, err := collection.Find(ctx, filterString)
 		if err == nil {
+			defer func() { _ = cursorString.Close(ctx) }()
 			var stringSubs []models.PushSubscription
 			if err := cursorString.All(ctx, &stringSubs); err == nil && len(stringSubs) > 0 {
 				slog.Warn("Found subscriptions by string ID instead of ObjectID! Please fix user ID type in DB.")
@@ -158,7 +159,7 @@ func (m *MongoDB) GetAllPushSubscriptions(ctx context.Context) ([]models.PushSub
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var subscriptions []models.PushSubscription
 	if err = cursor.All(ctx, &subscriptions); err != nil {
