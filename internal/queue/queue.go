@@ -2,7 +2,8 @@ package queue
 
 import (
 	"context"
-	"log"
+	"log/slog"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -15,6 +16,8 @@ import (
 	"github.com/jorbush/jorbites-notifier/internal/models"
 	"github.com/jorbush/jorbites-notifier/internal/push"
 )
+
+
 
 type Queue struct {
 	notifications []models.Notification
@@ -29,7 +32,8 @@ type Queue struct {
 func NewQueue(cfg *config.Config) *Queue {
 	mongoDB, err := database.NewMongoDB(cfg)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		slog.Error("Failed to connect to MongoDB", "error", err)
+		os.Exit(1)
 	}
 
 	return &Queue{
@@ -56,7 +60,7 @@ func (q *Queue) Enqueue(notification models.Notification) {
 	default:
 	}
 
-	log.Printf("Notification %s added to queue. Queue size: %d", notification.ID, len(q.notifications))
+	slog.Info("Notification added to queue", "notificationId", notification.ID, "queueSize", len(q.notifications))
 }
 
 func (q *Queue) GetQueueStatus() (int, []models.Notification) {
@@ -91,7 +95,7 @@ func (q *Queue) StartProcessing() {
 		}
 	}()
 
-	log.Println("Notification queue processing started")
+	slog.Info("Notification queue processing started")
 }
 
 func (q *Queue) processNextNotification() {
@@ -107,18 +111,18 @@ func (q *Queue) processNextNotification() {
 	q.notifications[0] = notification
 	q.mutex.Unlock()
 
-	log.Printf("Processing notification %s of type %s", notification.ID, notification.Type)
+	slog.Info("Processing notification", "notificationId", notification.ID, "type", notification.Type)
 
 	success := q.processNotificationByType(notification)
 
-	log.Printf("Notification %s processed with success: %t", notification.ID, success)
+	slog.Info("Notification processed", "notificationId", notification.ID, "success", success)
 
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
 	if len(q.notifications) > 0 && q.notifications[0].ID == notification.ID {
 		q.notifications = q.notifications[1:]
-		log.Printf("Notification %s processed. Queue size: %d", notification.ID, len(q.notifications))
+		slog.Info("Notification processed", "notificationId", notification.ID, "queueSize", len(q.notifications))
 	}
 }
 
@@ -137,16 +141,16 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		defer cancel()
 
 		user, err := q.mongoDB.GetUserByEmail(ctx, notification.Recipient)
-		var language string = "es"
+		language := "es"
 		if err != nil {
-			log.Printf("Error fetching user for recipient %s: %v (using default language)", notification.Recipient, err)
+			slog.Error("Error fetching user, using default language", "recipient", notification.Recipient, "error", err)
 		} else {
 			language = i18n.GetUserLanguage(user)
 		}
 
 		success, err := q.emailSender.SendNotificationEmail(notification, language)
 		if err != nil {
-			log.Printf("Error sending email for notification %s: %v", notification.ID, err)
+			slog.Error("Error sending email for notification", "notificationId", notification.ID, "error", err)
 			return false
 		}
 		return success
@@ -158,22 +162,22 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 
 		user, err := q.mongoDB.GetUserByEmail(ctx, notification.Recipient)
 		if err != nil {
-			log.Printf("Error fetching user for recipient %s: %v", notification.Recipient, err)
+			slog.Error("Error fetching user", "recipient", notification.Recipient, "error", err)
 			return false
 		}
 
 		language := i18n.GetUserLanguage(user)
 
-		var success bool = true
+		success := true
 		if user.EmailNotifications {
 			var err error
 			success, err = q.emailSender.SendNotificationEmail(notification, language)
 			if err != nil {
-				log.Printf("Error sending email for notification %s: %v", notification.ID, err)
+				slog.Error("Error sending email for notification", "notificationId", notification.ID, "error", err)
 				success = false
 			}
 		} else {
-			log.Printf("Skipping email for %s (notifications disabled)", notification.Recipient)
+			slog.Info("Skipping email notification (disabled)", "recipient", notification.Recipient)
 		}
 
 		userID := user.ID.Hex()
@@ -205,28 +209,27 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		}
 
 		if title != "" {
-			log.Printf("Sending push notification '%s' to user %s", title, userID)
+			slog.Info("Sending push notification", "title", title, "userId", userID)
 
 			subsCtx, subsCancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer subsCancel()
-
 			subs, err := q.mongoDB.GetPushSubscriptionsForUsers(subsCtx, []string{userID})
+			subsCancel()
 			if err != nil {
-				log.Printf("Error fetching push subscriptions for user %s: %v", userID, err)
+				slog.Error("Error fetching push subscriptions for user", "userId", userID, "error", err)
 			} else {
-				log.Printf("Found %d push subscriptions for user %s", len(subs), userID)
+				slog.Info("Found push subscriptions for user", "count", len(subs), "userId", userID)
 				for _, sub := range subs {
 					go func(s models.PushSubscription) {
 						if err := q.pushSender.SendNotification(s, title, message, url); err != nil {
-							log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
+							slog.Error("Error sending push notification", "subscriptionId", s.ID.Hex(), "error", err)
 						} else {
-							log.Printf("Push sent to subscription %s", s.ID.Hex())
+							slog.Info("Push sent to subscription", "subscriptionId", s.ID.Hex())
 						}
 					}(sub)
 				}
 			}
 		} else {
-			log.Printf("No push notification title set for type %s", notification.Type)
+			slog.Warn("No push notification title set for type", "type", notification.Type)
 		}
 
 		return success
@@ -245,7 +248,7 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 	case models.TypeVotationResult:
 		return q.processVotationResultNotification(notification)
 	default:
-		log.Printf("Unknown notification type: %s", notification.Type)
+		slog.Warn("Unknown notification type", "type", notification.Type)
 		return false
 	}
 }
@@ -256,7 +259,7 @@ func (q *Queue) broadcastPushNotificationMultiLang(notification models.Notificat
 
 	subs, err := q.mongoDB.GetAllPushSubscriptions(ctx)
 	if err != nil {
-		log.Printf("Error fetching push subscriptions for broadcast: %v", err)
+		slog.Error("Error fetching push subscriptions for broadcast", "error", err)
 		return
 	}
 
@@ -266,9 +269,9 @@ func (q *Queue) broadcastPushNotificationMultiLang(notification models.Notificat
 			defer userCancel()
 
 			user, err := q.mongoDB.GetUserByID(userCtx, s.UserID.Hex())
-			var language string = "es"
+			language := "es"
 			if err != nil {
-				log.Printf("Error fetching user %s for push notification: %v (using default language)", s.UserID.Hex(), err)
+				slog.Error("Error fetching user for push notification, using default language", "userId", s.UserID.Hex(), "error", err)
 			} else {
 				language = i18n.GetUserLanguage(user)
 			}
@@ -276,7 +279,7 @@ func (q *Queue) broadcastPushNotificationMultiLang(notification models.Notificat
 			pushTexts := i18n.GetPushNotificationText(notification.Type, language, notification.Metadata)
 
 			if err := q.pushSender.SendNotification(s, pushTexts.Title, pushTexts.Message, url); err != nil {
-				log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
+				slog.Error("Error sending push notification", "subscriptionId", s.ID.Hex(), "error", err)
 			}
 		}(sub)
 	}
@@ -291,11 +294,11 @@ func (q *Queue) sendPushToUsersMultiLang(userIDs []string, notification models.N
 
 	subs, err := q.mongoDB.GetPushSubscriptionsForUsers(ctx, userIDs)
 	if err != nil {
-		log.Printf("Error fetching push subscriptions for users: %v", err)
+		slog.Error("Error fetching push subscriptions for users", "error", err)
 		return
 	}
 
-	log.Printf("Found %d push subscriptions for users %v", len(subs), userIDs)
+	slog.Info("Found push subscriptions for users", "count", len(subs), "userIds", userIDs)
 
 	for _, sub := range subs {
 		go func(s models.PushSubscription) {
@@ -303,9 +306,9 @@ func (q *Queue) sendPushToUsersMultiLang(userIDs []string, notification models.N
 			defer userCancel()
 
 			user, err := q.mongoDB.GetUserByID(userCtx, s.UserID.Hex())
-			var language string = "es"
+			language := "es"
 			if err != nil {
-				log.Printf("Error fetching user %s for push notification: %v (using default language)", s.UserID.Hex(), err)
+				slog.Error("Error fetching user for push notification, using default language", "userId", s.UserID.Hex(), "error", err)
 			} else {
 				language = i18n.GetUserLanguage(user)
 			}
@@ -313,9 +316,9 @@ func (q *Queue) sendPushToUsersMultiLang(userIDs []string, notification models.N
 			pushTexts := i18n.GetPushNotificationText(notification.Type, language, notification.Metadata)
 
 			if err := q.pushSender.SendNotification(s, pushTexts.Title, pushTexts.Message, url); err != nil {
-				log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
+				slog.Error("Error sending push notification", "subscriptionId", s.ID.Hex(), "error", err)
 			} else {
-				log.Printf("Push sent to subscription %s", s.ID.Hex())
+				slog.Info("Push sent to subscription", "subscriptionId", s.ID.Hex())
 			}
 		}(sub)
 	}
@@ -328,10 +331,10 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
 	var emailSuccess bool
 	if err != nil {
-		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		slog.Error("Error fetching users for notification", "notificationId", notification.ID, "error", err)
 		emailSuccess = false
 	} else {
-		log.Printf("Sending new recipe notification to %d users with notifications enabled", len(users))
+		slog.Info("Sending new recipe notification", "count", len(users))
 		successCount := 0
 		failCount := 0
 
@@ -348,7 +351,7 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", user.Email, err)
+				slog.Error("Error sending email", "email", user.Email, "error", err)
 				failCount++
 				continue
 			}
@@ -360,7 +363,7 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		log.Printf("New recipe email results: %d successful, %d failed", successCount, failCount)
+		slog.Info("New recipe email results", "successful", successCount, "failed", failCount)
 		emailSuccess = successCount > 0
 	}
 
@@ -376,10 +379,10 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 	users, err := q.mongoDB.GetUsersMentionedInComment(ctx, notification.Metadata["mentionedUsers"], notification.Recipient)
 	var emailSuccess bool
 	if err != nil {
-		log.Printf("Error fetching users for mention notification %s: %v", notification.ID, err)
+		slog.Error("Error fetching users for mention notification", "notificationId", notification.ID, "error", err)
 		emailSuccess = false
 	} else {
-		log.Printf("Sending mention in comment notification to %d users", len(users))
+		slog.Info("Sending mention in comment notification", "count", len(users))
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
@@ -394,7 +397,7 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", user.Email, err)
+				slog.Error("Error sending email", "email", user.Email, "error", err)
 				failCount++
 				continue
 			}
@@ -405,7 +408,7 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		log.Printf("Mention in comment email results: %d successful, %d failed", successCount, failCount)
+		slog.Info("Mention in comment email results", "successful", successCount, "failed", failCount)
 		emailSuccess = successCount > 0
 	}
 
@@ -425,10 +428,10 @@ func (q *Queue) processNewBlogNotification(notification models.Notification) boo
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
 	var emailSuccess bool
 	if err != nil {
-		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		slog.Error("Error fetching users for notification", "notificationId", notification.ID, "error", err)
 		emailSuccess = false
 	} else {
-		log.Printf("Sending new blog notification to %d users with notifications enabled", len(users))
+		slog.Info("Sending new blog notification", "count", len(users))
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
@@ -442,7 +445,7 @@ func (q *Queue) processNewBlogNotification(notification models.Notification) boo
 			language := i18n.GetUserLanguage(&user)
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", user.Email, err)
+				slog.Error("Error sending email", "email", user.Email, "error", err)
 				failCount++
 				continue
 			}
@@ -453,7 +456,7 @@ func (q *Queue) processNewBlogNotification(notification models.Notification) boo
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		log.Printf("New blog notification results: %d successful, %d failed", successCount, failCount)
+		slog.Info("New blog notification results", "successful", successCount, "failed", failCount)
 		emailSuccess = successCount > 0
 	}
 
@@ -469,10 +472,10 @@ func (q *Queue) processNewEventNotification(notification models.Notification) bo
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
 	var emailSuccess bool
 	if err != nil {
-		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		slog.Error("Error fetching users for notification", "notificationId", notification.ID, "error", err)
 		emailSuccess = false
 	} else {
-		log.Printf("Sending new event notification to %d users with notifications enabled", len(users))
+		slog.Info("Sending new event notification", "count", len(users))
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
@@ -486,7 +489,7 @@ func (q *Queue) processNewEventNotification(notification models.Notification) bo
 			language := i18n.GetUserLanguage(&user)
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", user.Email, err)
+				slog.Error("Error sending email", "email", user.Email, "error", err)
 				failCount++
 				continue
 			}
@@ -497,7 +500,7 @@ func (q *Queue) processNewEventNotification(notification models.Notification) bo
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		log.Printf("New event notification results: %d successful, %d failed", successCount, failCount)
+		slog.Info("New event notification results", "successful", successCount, "failed", failCount)
 		emailSuccess = successCount > 0
 	}
 
@@ -513,10 +516,10 @@ func (q *Queue) processEventEndingSoonNotification(notification models.Notificat
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
 	var emailSuccess bool
 	if err != nil {
-		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		slog.Error("Error fetching users for notification", "notificationId", notification.ID, "error", err)
 		emailSuccess = false
 	} else {
-		log.Printf("Sending event ending soon notification to %d users with notifications enabled", len(users))
+		slog.Info("Sending event ending soon notification", "count", len(users))
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
@@ -530,7 +533,7 @@ func (q *Queue) processEventEndingSoonNotification(notification models.Notificat
 			language := i18n.GetUserLanguage(&user)
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", user.Email, err)
+				slog.Error("Error sending email", "email", user.Email, "error", err)
 				failCount++
 				continue
 			}
@@ -541,7 +544,7 @@ func (q *Queue) processEventEndingSoonNotification(notification models.Notificat
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		log.Printf("Event ending soon notification results: %d successful, %d failed", successCount, failCount)
+		slog.Info("Event ending soon notification results", "successful", successCount, "failed", failCount)
 		emailSuccess = successCount > 0
 	}
 
@@ -557,10 +560,10 @@ func (q *Queue) processNewQuestNotification(notification models.Notification) bo
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
 	var emailSuccess bool
 	if err != nil {
-		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		slog.Error("Error fetching users for notification", "notificationId", notification.ID, "error", err)
 		emailSuccess = false
 	} else {
-		log.Printf("Sending new quest notification to %d users with notifications enabled", len(users))
+		slog.Info("Sending new quest notification", "count", len(users))
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
@@ -574,7 +577,7 @@ func (q *Queue) processNewQuestNotification(notification models.Notification) bo
 			language := i18n.GetUserLanguage(&user)
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", user.Email, err)
+				slog.Error("Error sending email", "email", user.Email, "error", err)
 				failCount++
 				continue
 			}
@@ -585,7 +588,7 @@ func (q *Queue) processNewQuestNotification(notification models.Notification) bo
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		log.Printf("New quest notification results: %d successful, %d failed", successCount, failCount)
+		slog.Info("New quest notification results", "successful", successCount, "failed", failCount)
 		emailSuccess = successCount > 0
 	}
 
@@ -605,10 +608,10 @@ func (q *Queue) processNewChallengeNotification(notification models.Notification
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
 	var emailSuccess bool
 	if err != nil {
-		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		slog.Error("Error fetching users for notification", "notificationId", notification.ID, "error", err)
 		emailSuccess = false
 	} else {
-		log.Printf("Sending new challenge notification to %d users with notifications enabled", len(users))
+		slog.Info("Sending new challenge notification", "count", len(users))
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
@@ -622,7 +625,7 @@ func (q *Queue) processNewChallengeNotification(notification models.Notification
 			language := i18n.GetUserLanguage(&user)
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", user.Email, err)
+				slog.Error("Error sending email", "email", user.Email, "error", err)
 				failCount++
 				continue
 			}
@@ -633,7 +636,7 @@ func (q *Queue) processNewChallengeNotification(notification models.Notification
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		log.Printf("New challenge notification results: %d successful, %d failed", successCount, failCount)
+		slog.Info("New challenge notification results", "successful", successCount, "failed", failCount)
 		emailSuccess = successCount > 0
 	}
 
@@ -649,10 +652,10 @@ func (q *Queue) processNewVotationNotification(notification models.Notification)
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
 	var emailSuccess bool
 	if err != nil {
-		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		slog.Error("Error fetching users for notification", "notificationId", notification.ID, "error", err)
 		emailSuccess = false
 	} else {
-		log.Printf("Sending new votation notification to %d users with notifications enabled", len(users))
+		slog.Info("Sending new votation notification", "count", len(users))
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
@@ -666,7 +669,7 @@ func (q *Queue) processNewVotationNotification(notification models.Notification)
 			language := i18n.GetUserLanguage(&user)
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", user.Email, err)
+				slog.Error("Error sending email", "email", user.Email, "error", err)
 				failCount++
 				continue
 			}
@@ -677,7 +680,7 @@ func (q *Queue) processNewVotationNotification(notification models.Notification)
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		log.Printf("New votation notification results: %d successful, %d failed", successCount, failCount)
+		slog.Info("New votation notification results", "successful", successCount, "failed", failCount)
 		emailSuccess = successCount > 0
 	}
 
@@ -693,10 +696,10 @@ func (q *Queue) processVotationResultNotification(notification models.Notificati
 	users, err := q.mongoDB.GetUsersWithNotificationsEnabled(ctx)
 	var emailSuccess bool
 	if err != nil {
-		log.Printf("Error fetching users for notification %s: %v", notification.ID, err)
+		slog.Error("Error fetching users for notification", "notificationId", notification.ID, "error", err)
 		emailSuccess = false
 	} else {
-		log.Printf("Sending votation result notification to %d users with notifications enabled", len(users))
+		slog.Info("Sending votation result notification", "count", len(users))
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
@@ -710,7 +713,7 @@ func (q *Queue) processVotationResultNotification(notification models.Notificati
 			language := i18n.GetUserLanguage(&user)
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", user.Email, err)
+				slog.Error("Error sending email", "email", user.Email, "error", err)
 				failCount++
 				continue
 			}
@@ -721,7 +724,7 @@ func (q *Queue) processVotationResultNotification(notification models.Notificati
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		log.Printf("Votation result notification results: %d successful, %d failed", successCount, failCount)
+		slog.Info("Votation result notification results", "successful", successCount, "failed", failCount)
 		emailSuccess = successCount > 0
 	}
 
@@ -736,12 +739,12 @@ func (q *Queue) processNewBadgeNotification(notification models.Notification) bo
 
 	user, err := q.mongoDB.GetUserByEmail(ctx, notification.Recipient)
 	if err != nil {
-		log.Printf("Error fetching user for recipient %s: %v", notification.Recipient, err)
+		slog.Error("Error fetching user", "recipient", notification.Recipient, "error", err)
 		return false
 	}
 
 	language := i18n.GetUserLanguage(user)
-	var success bool = true
+	success := true
 
 	if notification.Metadata == nil {
 		notification.Metadata = make(map[string]string)
@@ -753,11 +756,11 @@ func (q *Queue) processNewBadgeNotification(notification models.Notification) bo
 	if user.EmailNotifications {
 		success, err = q.emailSender.SendNotificationEmail(notification, language)
 		if err != nil {
-			log.Printf("Error sending email for notification %s: %v", notification.ID, err)
+			slog.Error("Error sending email for notification", "notificationId", notification.ID, "error", err)
 			success = false
 		}
 	} else {
-		log.Printf("Skipping email for %s (notifications disabled)", notification.Recipient)
+		slog.Info("Skipping email notification (disabled)", "recipient", notification.Recipient)
 	}
 
 	pushTexts := i18n.GetPushNotificationText(notification.Type, language, notification.Metadata)
@@ -765,28 +768,27 @@ func (q *Queue) processNewBadgeNotification(notification models.Notification) bo
 	url := "/profile/" + userID
 
 	if pushTexts.Title != "" {
-		log.Printf("Sending push notification '%s' to user %s", pushTexts.Title, userID)
+		slog.Info("Sending push notification", "title", pushTexts.Title, "userId", userID)
 
 		subsCtx, subsCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer subsCancel()
-
 		subs, err := q.mongoDB.GetPushSubscriptionsForUsers(subsCtx, []string{userID})
+		subsCancel()
 		if err != nil {
-			log.Printf("Error fetching push subscriptions for user %s: %v", userID, err)
+			slog.Error("Error fetching push subscriptions for user", "userId", userID, "error", err)
 		} else {
-			log.Printf("Found %d push subscriptions for user %s", len(subs), userID)
+			slog.Info("Found push subscriptions for user", "count", len(subs), "userId", userID)
 			for _, sub := range subs {
 				go func(s models.PushSubscription) {
 					if err := q.pushSender.SendNotification(s, pushTexts.Title, pushTexts.Message, url); err != nil {
-						log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
+						slog.Error("Error sending push notification", "subscriptionId", s.ID.Hex(), "error", err)
 					} else {
-						log.Printf("Push sent to subscription %s", s.ID.Hex())
+						slog.Info("Push sent to subscription", "subscriptionId", s.ID.Hex())
 					}
 				}(sub)
 			}
 		}
 	} else {
-		log.Printf("No push notification title set for type %s", notification.Type)
+		slog.Warn("No push notification title set for type", "type", notification.Type)
 	}
 
 	return success
@@ -798,12 +800,12 @@ func (q *Queue) processVerifiedNotification(notification models.Notification) bo
 
 	user, err := q.mongoDB.GetUserByEmail(ctx, notification.Recipient)
 	if err != nil {
-		log.Printf("Error fetching user for recipient %s: %v", notification.Recipient, err)
+		slog.Error("Error fetching user", "recipient", notification.Recipient, "error", err)
 		return false
 	}
 
 	language := i18n.GetUserLanguage(user)
-	var success bool = true
+	success := true
 
 	if notification.Metadata == nil {
 		notification.Metadata = make(map[string]string)
@@ -813,11 +815,11 @@ func (q *Queue) processVerifiedNotification(notification models.Notification) bo
 	if user.EmailNotifications {
 		success, err = q.emailSender.SendNotificationEmail(notification, language)
 		if err != nil {
-			log.Printf("Error sending email for notification %s: %v", notification.ID, err)
+			slog.Error("Error sending email for notification", "notificationId", notification.ID, "error", err)
 			success = false
 		}
 	} else {
-		log.Printf("Skipping email for %s (notifications disabled)", notification.Recipient)
+		slog.Info("Skipping email notification (disabled)", "recipient", notification.Recipient)
 	}
 
 	pushTexts := i18n.GetPushNotificationText(notification.Type, language, notification.Metadata)
@@ -825,28 +827,27 @@ func (q *Queue) processVerifiedNotification(notification models.Notification) bo
 	url := "/profile/" + userID
 
 	if pushTexts.Title != "" {
-		log.Printf("Sending push notification '%s' to user %s", pushTexts.Title, userID)
+		slog.Info("Sending push notification", "title", pushTexts.Title, "userId", userID)
 
 		subsCtx, subsCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer subsCancel()
-
 		subs, err := q.mongoDB.GetPushSubscriptionsForUsers(subsCtx, []string{userID})
+		subsCancel()
 		if err != nil {
-			log.Printf("Error fetching push subscriptions for user %s: %v", userID, err)
+			slog.Error("Error fetching push subscriptions for user", "userId", userID, "error", err)
 		} else {
-			log.Printf("Found %d push subscriptions for user %s", len(subs), userID)
+			slog.Info("Found push subscriptions for user", "count", len(subs), "userId", userID)
 			for _, sub := range subs {
 				go func(s models.PushSubscription) {
 					if err := q.pushSender.SendNotification(s, pushTexts.Title, pushTexts.Message, url); err != nil {
-						log.Printf("Error sending push to %s: %v", s.ID.Hex(), err)
+						slog.Error("Error sending push notification", "subscriptionId", s.ID.Hex(), "error", err)
 					} else {
-						log.Printf("Push sent to subscription %s", s.ID.Hex())
+						slog.Info("Push sent to subscription", "subscriptionId", s.ID.Hex())
 					}
 				}(sub)
 			}
 		}
 	} else {
-		log.Printf("No push notification title set for type %s", notification.Type)
+		slog.Warn("No push notification title set for type", "type", notification.Type)
 	}
 
 	return success

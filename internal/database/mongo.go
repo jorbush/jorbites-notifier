@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/jorbush/jorbites-notifier/config"
@@ -24,7 +24,7 @@ func NewMongoDB(cfg *config.Config) (*MongoDB, error) {
 		return nil, err
 	}
 
-	log.Println("Connected to MongoDB successfully")
+	slog.Info("Connected to MongoDB successfully")
 	db := client.Database(cfg.MongoDB)
 
 	return &MongoDB{
@@ -41,19 +41,19 @@ func (m *MongoDB) Close(ctx context.Context) error {
 func (m *MongoDB) GetUsersWithNotificationsEnabled(ctx context.Context) ([]models.User, error) {
 	collection := m.db.Collection("User")
 
-	filter := bson.D{{Key: "emailNotifications", Value: true}}
+	filter := bson.D{bson.E{Key: "emailNotifications", Value: true}}
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var users []models.User
 	if err = cursor.All(ctx, &users); err != nil {
 		return nil, err
 	}
 
-	log.Printf("Found %d users with email notifications enabled", len(users))
+	slog.Info("Found users with email notifications enabled", "count", len(users))
 	return users, nil
 }
 
@@ -64,33 +64,33 @@ func (m *MongoDB) GetUsersMentionedInComment(ctx context.Context, mentionedUsers
 	for _, idStr := range mentionedUserIdsArray {
 		objectId, err := bson.ObjectIDFromHex(idStr)
 		if err != nil {
-			log.Printf("Invalid ObjectID: %s, error: %v", idStr, err)
+			slog.Warn("Invalid ObjectID", "id", idStr, "error", err)
 			continue // Skip invalid IDs
 		}
 		objectIds = append(objectIds, objectId)
 	}
 	if len(objectIds) == 0 {
-		log.Printf("No valid ObjectIDs found")
+		slog.Warn("No valid ObjectIDs found")
 		return []models.User{}, nil
 	}
 	filter := bson.D{
-		{Key: "_id", Value: bson.D{{Key: "$in", Value: objectIds}}},
-		{Key: "emailNotifications", Value: true},
-		{Key: "email", Value: bson.D{{Key: "$ne", Value: recipientEmail}}},
+		bson.E{Key: "_id", Value: bson.D{bson.E{Key: "$in", Value: objectIds}}},
+		bson.E{Key: "emailNotifications", Value: true},
+		bson.E{Key: "email", Value: bson.D{bson.E{Key: "$ne", Value: recipientEmail}}},
 	}
 
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var users []models.User
 	if err = cursor.All(ctx, &users); err != nil {
 		return nil, err
 	}
 
-	log.Printf("Found %d users with email notifications enabled and mentioned in comment", len(users))
+	slog.Info("Found users with email notifications enabled and mentioned in comment", "count", len(users))
 	return users, nil
 }
 
@@ -102,16 +102,16 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 		if objID, err := bson.ObjectIDFromHex(id); err == nil {
 			objectIDs = append(objectIDs, objID)
 		} else {
-			log.Printf("Invalid user ID %s in GetPushSubscriptionsForUsers", id)
+			slog.Warn("Invalid user ID in GetPushSubscriptionsForUsers", "userId", id)
 		}
 	}
 
-	filter := bson.D{{Key: "userId", Value: bson.D{{Key: "$in", Value: objectIDs}}}}
+	filter := bson.D{bson.E{Key: "userId", Value: bson.D{bson.E{Key: "$in", Value: objectIDs}}}}
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var subscriptions []models.PushSubscription
 	if err = cursor.All(ctx, &subscriptions); err != nil {
@@ -123,15 +123,16 @@ func (m *MongoDB) GetPushSubscriptionsForUsers(ctx context.Context, userIDs []st
 	if len(subscriptions) == 0 && len(userIDs) > 0 {
 		// Fallback check for string IDs just in case?
 		// No, let's trust the schema but log
-		log.Printf("No subscriptions found for objectIDs: %v", objectIDs)
+		slog.Info("No subscriptions found for objectIDs", "objectIDs", objectIDs)
 
 		// Attempt query with strings if 0 found - safety net
-		filterString := bson.D{{Key: "userId", Value: bson.D{{Key: "$in", Value: userIDs}}}}
+		filterString := bson.D{bson.E{Key: "userId", Value: bson.D{bson.E{Key: "$in", Value: userIDs}}}}
 		cursorString, err := collection.Find(ctx, filterString)
 		if err == nil {
+			defer func() { _ = cursorString.Close(ctx) }()
 			var stringSubs []models.PushSubscription
 			if err := cursorString.All(ctx, &stringSubs); err == nil && len(stringSubs) > 0 {
-				log.Printf("Found subscriptions by string ID instead of ObjectID! Please fix user ID type in DB.")
+				slog.Warn("Found subscriptions by string ID instead of ObjectID! Please fix user ID type in DB.")
 				return stringSubs, nil
 			}
 		}
@@ -147,7 +148,7 @@ func (m *MongoDB) DeletePushSubscription(ctx context.Context, id string) error {
 		return err
 	}
 
-	filter := bson.D{{Key: "_id", Value: objID}}
+	filter := bson.D{bson.E{Key: "_id", Value: objID}}
 	_, err = collection.DeleteOne(ctx, filter)
 	return err
 }
@@ -158,7 +159,7 @@ func (m *MongoDB) GetAllPushSubscriptions(ctx context.Context) ([]models.PushSub
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var subscriptions []models.PushSubscription
 	if err = cursor.All(ctx, &subscriptions); err != nil {
@@ -171,7 +172,7 @@ func (m *MongoDB) GetAllPushSubscriptions(ctx context.Context) ([]models.PushSub
 func (m *MongoDB) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	collection := m.db.Collection("User")
 	var user models.User
-	filter := bson.D{{Key: "email", Value: email}}
+	filter := bson.D{bson.E{Key: "email", Value: email}}
 	err := collection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		return nil, err
@@ -186,7 +187,7 @@ func (m *MongoDB) GetUserByID(ctx context.Context, id string) (*models.User, err
 	if err != nil {
 		return nil, err
 	}
-	filter := bson.D{{Key: "_id", Value: objID}}
+	filter := bson.D{bson.E{Key: "_id", Value: objID}}
 	err = collection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		return nil, err

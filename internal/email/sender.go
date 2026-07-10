@@ -36,9 +36,9 @@ func (s *EmailSender) SendNotificationEmail(notification models.Notification, la
 	auth := smtp.PlainAuth("", s.config.SMTPUser, s.config.SMTPPassword, s.config.SMTPHost)
 
 	message := bytes.NewBuffer(nil)
-	message.WriteString(fmt.Sprintf("From: Jorbites <%s>\r\n", s.config.SMTPUser))
-	message.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
-	message.WriteString(fmt.Sprintf("To: %s\r\n", notification.Recipient))
+	fmt.Fprintf(message, "From: Jorbites <%s>\r\n", s.config.SMTPUser)
+	fmt.Fprintf(message, "Subject: %s\r\n", subject)
+	fmt.Fprintf(message, "To: %s\r\n", notification.Recipient)
 	message.WriteString("MIME-version: 1.0\r\n")
 	message.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n\r\n")
 	message.WriteString(body)

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 )
@@ -13,7 +13,8 @@ const (
 func RequireAPIKey(next http.HandlerFunc) http.HandlerFunc {
 	apiKey := os.Getenv("API_KEY")
 	if apiKey == "" {
-		log.Fatal("API_KEY environment variable is not set")
+		slog.Error("API_KEY environment variable is not set")
+		os.Exit(1)
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" {

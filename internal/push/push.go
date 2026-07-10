@@ -3,7 +3,7 @@ package push
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/SherClockHolmes/webpush-go"
@@ -53,12 +53,12 @@ func (p *PushSender) SendNotification(subscription models.PushSubscription, titl
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
-		log.Printf("Subscription expired or not found, deleting... %s", subscription.ID.Hex())
+		slog.Info("Subscription expired or not found, deleting", "subscriptionId", subscription.ID.Hex())
 		if err := p.db.DeletePushSubscription(context.Background(), subscription.ID.Hex()); err != nil {
-			log.Printf("Error deleting subscription %s: %v", subscription.ID.Hex(), err)
+			slog.Error("Error deleting subscription", "subscriptionId", subscription.ID.Hex(), "error", err)
 		}
 	}
 
