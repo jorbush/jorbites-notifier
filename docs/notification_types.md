@@ -307,11 +307,27 @@ Broadcast sent when a Top Recipe voting session is closed, announcing the winner
 }
 ```
 
+## Notification Preference Categories
+
+Users can toggle notification preferences per category in the main app. Before dispatching any email or push notification, Jorbites Notifier evaluates `user.IsNotificationCategoryEnabled(type)`.
+
+| Category Key | Notification Types Included | Default |
+|---|---|---|
+| `social` | `NEW_LIKE`, `NEW_COMMENT`, `MENTION_IN_COMMENT` | Enabled |
+| `newContent` | `NEW_RECIPE`, `NEW_BLOG` | Enabled |
+| `eventsAndChallenges` | `NEW_EVENT`, `EVENT_ENDING_SOON`, `NEW_CHALLENGE` | Enabled |
+| `quests` | `NEW_QUEST`, `QUEST_FULFILLED` | Enabled |
+| `voting` | `NEW_VOTATION`, `VOTATION_RESULT` | Enabled |
+| `achievements` | `NEW_BADGE`, `VERIFIED` | Enabled |
+
+> **Note**: `FORGOT_PASSWORD` and `NOTIFICATIONS_ACTIVATED` bypass category checks and are always delivered if triggered.
+
 ## Adding New Notification Types
 
 To add a new notification type:
 
 1. Add the type constant in `models/notification.go`
-2. Implement the processing logic for the new type in `queue.processNotificationByType()` and its corresponding method.
-3. Add the new type to the `email.templates.go` file.
-4. Update this documentation with details about the new type.
+2. Map the type to a category in `user.go` (`IsNotificationCategoryEnabled`)
+3. Implement the processing logic for the new type in `queue.processNotificationByType()` and its corresponding method.
+4. Add the new type to the `email.templates.go` file.
+5. Update this documentation with details about the new type.

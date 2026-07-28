@@ -28,6 +28,8 @@ POST /notifications
 
 Adds a new notification to the processing queue.
 
+> **Note**: While the endpoint enqueues all valid notifications, actual delivery (email and push) is subject to the user's notification preferences configured in the database (`user.IsNotificationCategoryEnabled`).
+
 #### Request Body
 
 ```json
