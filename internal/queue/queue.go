@@ -168,6 +168,11 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 
 		language := i18n.GetUserLanguage(user)
 
+		if !user.IsNotificationCategoryEnabled(notification.Type) {
+			slog.Info("Skipping notification (category disabled)", "recipient", notification.Recipient, "type", notification.Type)
+			return true
+		}
+
 		success := true
 		if user.EmailNotifications {
 			var err error
@@ -273,6 +278,10 @@ func (q *Queue) broadcastPushNotificationMultiLang(notification models.Notificat
 			if err != nil {
 				slog.Error("Error fetching user for push notification, using default language", "userId", s.UserID.Hex(), "error", err)
 			} else {
+				if !user.IsNotificationCategoryEnabled(notification.Type) {
+					slog.Info("Skipping push notification (category disabled)", "userId", s.UserID.Hex(), "type", notification.Type)
+					return
+				}
 				language = i18n.GetUserLanguage(user)
 			}
 
@@ -310,6 +319,10 @@ func (q *Queue) sendPushToUsersMultiLang(userIDs []string, notification models.N
 			if err != nil {
 				slog.Error("Error fetching user for push notification, using default language", "userId", s.UserID.Hex(), "error", err)
 			} else {
+				if !user.IsNotificationCategoryEnabled(notification.Type) {
+					slog.Info("Skipping push notification (category disabled)", "userId", s.UserID.Hex(), "type", notification.Type)
+					return
+				}
 				language = i18n.GetUserLanguage(user)
 			}
 
@@ -339,6 +352,11 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 		failCount := 0
 
 		for _, user := range users {
+			if !user.IsNotificationCategoryEnabled(notification.Type) {
+				slog.Info("Skipping email notification (category disabled)", "recipient", user.Email, "type", notification.Type)
+				continue
+			}
+
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
@@ -386,6 +404,11 @@ func (q *Queue) processMentionInCommentNotification(notification models.Notifica
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
+			if !user.IsNotificationCategoryEnabled(notification.Type) {
+				slog.Info("Skipping email notification (category disabled)", "recipient", user.Email, "type", notification.Type)
+				continue
+			}
+
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
@@ -435,6 +458,11 @@ func (q *Queue) processNewBlogNotification(notification models.Notification) boo
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
+			if !user.IsNotificationCategoryEnabled(notification.Type) {
+				slog.Info("Skipping email notification (category disabled)", "recipient", user.Email, "type", notification.Type)
+				continue
+			}
+
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
@@ -479,6 +507,11 @@ func (q *Queue) processNewEventNotification(notification models.Notification) bo
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
+			if !user.IsNotificationCategoryEnabled(notification.Type) {
+				slog.Info("Skipping email notification (category disabled)", "recipient", user.Email, "type", notification.Type)
+				continue
+			}
+
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
@@ -523,6 +556,11 @@ func (q *Queue) processEventEndingSoonNotification(notification models.Notificat
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
+			if !user.IsNotificationCategoryEnabled(notification.Type) {
+				slog.Info("Skipping email notification (category disabled)", "recipient", user.Email, "type", notification.Type)
+				continue
+			}
+
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
@@ -567,6 +605,11 @@ func (q *Queue) processNewQuestNotification(notification models.Notification) bo
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
+			if !user.IsNotificationCategoryEnabled(notification.Type) {
+				slog.Info("Skipping email notification (category disabled)", "recipient", user.Email, "type", notification.Type)
+				continue
+			}
+
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
@@ -615,6 +658,10 @@ func (q *Queue) processNewChallengeNotification(notification models.Notification
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
+			if !user.IsNotificationCategoryEnabled(notification.Type) {
+				slog.Info("Skipping email notification (category disabled)", "recipient", user.Email, "type", notification.Type)
+				continue
+			}
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
@@ -659,6 +706,10 @@ func (q *Queue) processNewVotationNotification(notification models.Notification)
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
+			if !user.IsNotificationCategoryEnabled(notification.Type) {
+				slog.Info("Skipping email notification (category disabled)", "recipient", user.Email, "type", notification.Type)
+				continue
+			}
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
@@ -703,6 +754,10 @@ func (q *Queue) processVotationResultNotification(notification models.Notificati
 		successCount := 0
 		failCount := 0
 		for _, user := range users {
+			if !user.IsNotificationCategoryEnabled(notification.Type) {
+				slog.Info("Skipping email notification (category disabled)", "recipient", user.Email, "type", notification.Type)
+				continue
+			}
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
@@ -744,6 +799,10 @@ func (q *Queue) processNewBadgeNotification(notification models.Notification) bo
 	}
 
 	language := i18n.GetUserLanguage(user)
+	if !user.IsNotificationCategoryEnabled(notification.Type) {
+		slog.Info("Skipping notification (category disabled)", "recipient", notification.Recipient, "type", notification.Type)
+		return true
+	}
 	success := true
 
 	if notification.Metadata == nil {
@@ -805,6 +864,10 @@ func (q *Queue) processVerifiedNotification(notification models.Notification) bo
 	}
 
 	language := i18n.GetUserLanguage(user)
+	if !user.IsNotificationCategoryEnabled(notification.Type) {
+		slog.Info("Skipping notification (category disabled)", "recipient", notification.Recipient, "type", notification.Type)
+		return true
+	}
 	success := true
 
 	if notification.Metadata == nil {
