@@ -385,7 +385,11 @@ func (q *Queue) processNewRecipeNotification(notification models.Notification) b
 		emailSuccess = successCount > 0
 	}
 
-	q.broadcastPushNotificationMultiLang(notification, "/recipes/"+notification.Metadata["slug"])
+	url := "/"
+	if recipeId, ok := notification.Metadata["recipeId"]; ok && recipeId != "" {
+		url = "/recipes/" + recipeId
+	}
+	q.broadcastPushNotificationMultiLang(notification, url)
 
 	return emailSuccess
 }
