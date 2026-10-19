@@ -179,18 +179,21 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
 		<h2>¡Nuevo Evento! 🎉</h2>
 		<p>Hola,</p>
 		<p>¡Se ha publicado un nuevo evento en Jorbites!</p>
+		{{if .Metadata.title}}<p><strong>{{.Metadata.title}}</strong></p>{{end}}
 		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">Ver Evento</a>
 	`,
 		"ca": `
 		<h2>Nou Esdeveniment! 🎉</h2>
 		<p>Hola,</p>
 		<p>S'ha publicat un nou esdeveniment a Jorbites!</p>
+		{{if .Metadata.title}}<p><strong>{{.Metadata.title}}</strong></p>{{end}}
 		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">Veure Esdeveniment</a>
 	`,
 		"en": `
 		<h2>New Event! 🎉</h2>
 		<p>Hi there,</p>
 		<p>A new event has been published on Jorbites!</p>
+		{{if .Metadata.title}}<p><strong>{{.Metadata.title}}</strong></p>{{end}}
 		<a href="{{.SiteURL}}/events/{{.Metadata.eventId}}" class="button">View Event</a>
 	`,
 	},
@@ -517,6 +520,42 @@ func GetBaseTemplateFooter(language string) string {
 	return footer
 }
 
+// GetLocalizedEventTitle returns the localized title for an event based on language preference.
+// It checks metadata["title_" + language], falling back to metadata["title"] (default) and metadata["title_es"].
+func GetLocalizedEventTitle(metadata map[string]string, language string) string {
+	if metadata == nil {
+		return ""
+	}
+	if title, ok := metadata["title_"+language]; ok && title != "" {
+		return title
+	}
+	if title, ok := metadata["title"]; ok && title != "" {
+		return title
+	}
+	if title, ok := metadata["title_es"]; ok && title != "" {
+		return title
+	}
+	return ""
+}
+
+// GetLocalizedEventDescription returns the localized description for an event based on language preference.
+// It checks metadata["description_" + language], falling back to metadata["description"] (default) and metadata["description_es"].
+func GetLocalizedEventDescription(metadata map[string]string, language string) string {
+	if metadata == nil {
+		return ""
+	}
+	if desc, ok := metadata["description_"+language]; ok && desc != "" {
+		return desc
+	}
+	if desc, ok := metadata["description"]; ok && desc != "" {
+		return desc
+	}
+	if desc, ok := metadata["description_es"]; ok && desc != "" {
+		return desc
+	}
+	return ""
+}
+
 type PushNotificationTexts struct {
 	Title   string
 	Message string
@@ -607,7 +646,7 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 		}
 
 	case models.TypeNewEvent:
-		eventTitle := metadata["title"]
+		eventTitle := GetLocalizedEventTitle(metadata, language)
 		switch language {
 		case "ca":
 			return PushNotificationTexts{Title: "Nou Esdeveniment!", Message: eventTitle}
@@ -618,7 +657,7 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 		}
 
 	case models.TypeEventEndingSoon:
-		eventTitle := metadata["title"]
+		eventTitle := GetLocalizedEventTitle(metadata, language)
 		switch language {
 		case "ca":
 			return PushNotificationTexts{Title: "L'Esdeveniment Acaba Aviat!", Message: eventTitle + " acaba en 3 dies"}
