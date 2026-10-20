@@ -516,14 +516,22 @@ func (q *Queue) processNewEventNotification(notification models.Notification) bo
 				continue
 			}
 
+			language := i18n.GetUserLanguage(&user)
+
+			userMetadata := make(map[string]string, len(notification.Metadata))
+			for k, v := range notification.Metadata {
+				userMetadata[k] = v
+			}
+			userMetadata["title"] = i18n.GetLocalizedEventTitle(notification.Metadata, language)
+			userMetadata["description"] = i18n.GetLocalizedEventDescription(notification.Metadata, language)
+
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
 				Status:    models.StatusProcessing,
 				Recipient: user.Email,
-				Metadata:  notification.Metadata,
+				Metadata:  userMetadata,
 			}
-			language := i18n.GetUserLanguage(&user)
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
 				slog.Error("Error sending email", "email", user.Email, "error", err)
@@ -565,14 +573,22 @@ func (q *Queue) processEventEndingSoonNotification(notification models.Notificat
 				continue
 			}
 
+			language := i18n.GetUserLanguage(&user)
+
+			userMetadata := make(map[string]string, len(notification.Metadata))
+			for k, v := range notification.Metadata {
+				userMetadata[k] = v
+			}
+			userMetadata["title"] = i18n.GetLocalizedEventTitle(notification.Metadata, language)
+			userMetadata["description"] = i18n.GetLocalizedEventDescription(notification.Metadata, language)
+
 			userNotification := models.Notification{
 				ID:        uuid.New().String(),
 				Type:      notification.Type,
 				Status:    models.StatusProcessing,
 				Recipient: user.Email,
-				Metadata:  notification.Metadata,
+				Metadata:  userMetadata,
 			}
-			language := i18n.GetUserLanguage(&user)
 			success, err := q.emailSender.SendNotificationEmail(userNotification, language)
 			if err != nil {
 				slog.Error("Error sending email", "email", user.Email, "error", err)

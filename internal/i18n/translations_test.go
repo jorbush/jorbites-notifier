@@ -71,6 +71,8 @@ func TestGetEmailTemplateContent(t *testing.T) {
 		models.TypeNewQuest,
 		models.TypeQuestFulfilled,
 		models.TypeNewChallenge,
+		models.TypeNewEvent,
+		models.TypeEventEndingSoon,
 		models.TypeNewBadge,
 		models.TypeVerified,
 	}
@@ -115,6 +117,8 @@ func TestGetEmailSubject(t *testing.T) {
 		models.TypeNewQuest,
 		models.TypeQuestFulfilled,
 		models.TypeNewChallenge,
+		models.TypeNewEvent,
+		models.TypeEventEndingSoon,
 		models.TypeNewBadge,
 		models.TypeVerified,
 	}
@@ -449,6 +453,8 @@ func TestAllNotificationTypesHaveTranslations(t *testing.T) {
 		models.TypeNewQuest,
 		models.TypeQuestFulfilled,
 		models.TypeNewChallenge,
+		models.TypeNewEvent,
+		models.TypeEventEndingSoon,
 		models.TypeNewBadge,
 		models.TypeVerified,
 	}
@@ -490,6 +496,174 @@ func TestAllNotificationTypesHaveTranslations(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestGetLocalizedEventTitle(t *testing.T) {
+	metadata := map[string]string{
+		"title":    "Fiesta Mexicana",
+		"title_es": "Fiesta Mexicana",
+		"title_en": "Mexican Fiesta",
+		"title_ca": "Festa Mexicana",
+	}
+
+	tests := []struct {
+		name     string
+		metadata map[string]string
+		language string
+		expected string
+	}{
+		{
+			name:     "English preference resolves title_en",
+			metadata: metadata,
+			language: "en",
+			expected: "Mexican Fiesta",
+		},
+		{
+			name:     "Catalan preference resolves title_ca",
+			metadata: metadata,
+			language: "ca",
+			expected: "Festa Mexicana",
+		},
+		{
+			name:     "Spanish preference resolves title_es",
+			metadata: metadata,
+			language: "es",
+			expected: "Fiesta Mexicana",
+		},
+		{
+			name: "Fallback to title when localized key missing",
+			metadata: map[string]string{
+				"title": "Default Event Title",
+			},
+			language: "en",
+			expected: "Default Event Title",
+		},
+		{
+			name: "Fallback to title_es when requested language missing",
+			metadata: map[string]string{
+				"title_es": "Solo Español",
+			},
+			language: "en",
+			expected: "Solo Español",
+		},
+		{
+			name:     "Nil metadata returns empty string",
+			metadata: nil,
+			language: "en",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetLocalizedEventTitle(tt.metadata, tt.language)
+			if got != tt.expected {
+				t.Errorf("GetLocalizedEventTitle() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGetLocalizedEventDescription(t *testing.T) {
+	metadata := map[string]string{
+		"description":    "Sabores de México",
+		"description_es": "Sabores de México",
+		"description_en": "Flavors of Mexico",
+		"description_ca": "Sabors de Mèxic",
+	}
+
+	tests := []struct {
+		name     string
+		metadata map[string]string
+		language string
+		expected string
+	}{
+		{
+			name:     "English preference resolves description_en",
+			metadata: metadata,
+			language: "en",
+			expected: "Flavors of Mexico",
+		},
+		{
+			name:     "Catalan preference resolves description_ca",
+			metadata: metadata,
+			language: "ca",
+			expected: "Sabors de Mèxic",
+		},
+		{
+			name:     "Spanish preference resolves description_es",
+			metadata: metadata,
+			language: "es",
+			expected: "Sabores de México",
+		},
+		{
+			name: "Fallback to description when localized key missing",
+			metadata: map[string]string{
+				"description": "Default Description",
+			},
+			language: "ca",
+			expected: "Default Description",
+		},
+		{
+			name:     "Nil metadata returns empty string",
+			metadata: nil,
+			language: "es",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetLocalizedEventDescription(tt.metadata, tt.language)
+			if got != tt.expected {
+				t.Errorf("GetLocalizedEventDescription() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGetPushNotificationTextEventTranslations(t *testing.T) {
+	metadata := map[string]string{
+		"eventId":  "mexican_fiesta",
+		"title":    "Fiesta Mexicana",
+		"title_es": "Fiesta Mexicana",
+		"title_en": "Mexican Fiesta",
+		"title_ca": "Festa Mexicana",
+	}
+
+	t.Run("TypeNewEvent push translations", func(t *testing.T) {
+		es := GetPushNotificationText(models.TypeNewEvent, "es", metadata)
+		if es.Title != "¡Nuevo Evento!" || es.Message != "Fiesta Mexicana" {
+			t.Errorf("Unexpected Spanish push: %+v", es)
+		}
+
+		en := GetPushNotificationText(models.TypeNewEvent, "en", metadata)
+		if en.Title != "New Event!" || en.Message != "Mexican Fiesta" {
+			t.Errorf("Unexpected English push: %+v", en)
+		}
+
+		ca := GetPushNotificationText(models.TypeNewEvent, "ca", metadata)
+		if ca.Title != "Nou Esdeveniment!" || ca.Message != "Festa Mexicana" {
+			t.Errorf("Unexpected Catalan push: %+v", ca)
+		}
+	})
+
+	t.Run("TypeEventEndingSoon push translations", func(t *testing.T) {
+		es := GetPushNotificationText(models.TypeEventEndingSoon, "es", metadata)
+		if es.Title != "¡Evento Terminando!" || es.Message != "Fiesta Mexicana termina en 3 días" {
+			t.Errorf("Unexpected Spanish push: %+v", es)
+		}
+
+		en := GetPushNotificationText(models.TypeEventEndingSoon, "en", metadata)
+		if en.Title != "Event Ending Soon!" || en.Message != "Mexican Fiesta ends in 3 days" {
+			t.Errorf("Unexpected English push: %+v", en)
+		}
+
+		ca := GetPushNotificationText(models.TypeEventEndingSoon, "ca", metadata)
+		if ca.Title != "L'Esdeveniment Acaba Aviat!" || ca.Message != "Festa Mexicana acaba en 3 dies" {
+			t.Errorf("Unexpected Catalan push: %+v", ca)
+		}
+	})
 }
 
 // Helper function for tests
