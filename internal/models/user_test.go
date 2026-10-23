@@ -66,6 +66,26 @@ func TestIsNotificationCategoryEnabled(t *testing.T) {
 			expected:  false,
 		},
 		{
+			name: "social disabled skips NEW_COOKSNAP",
+			user: &User{
+				NotificationPreferences: &NotificationPreferences{
+					Social: boolPtr(false),
+				},
+			},
+			notifType: TypeNewCooksnap,
+			expected:  false,
+		},
+		{
+			name: "social enabled allows NEW_COOKSNAP",
+			user: &User{
+				NotificationPreferences: &NotificationPreferences{
+					Social: boolPtr(true),
+				},
+			},
+			notifType: TypeNewCooksnap,
+			expected:  true,
+		},
+		{
 			name: "social enabled allows NEW_LIKE",
 			user: &User{
 				NotificationPreferences: &NotificationPreferences{

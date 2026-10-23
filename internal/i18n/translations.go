@@ -30,6 +30,26 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
         <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">View Comment</a>
     `,
 	},
+	models.TypeNewCooksnap: {
+		"es": `
+        <h2>¡Han cocinado tu receta! 📸</h2>
+        <p>Hola,</p>
+        <p><strong>{{.Metadata.authorName}}</strong> ha preparado tu receta y ha compartido una foto de su plato.</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">Ver Foto</a>
+    `,
+		"ca": `
+        <h2>Han cuinat la teva recepta! 📸</h2>
+        <p>Hola,</p>
+        <p><strong>{{.Metadata.authorName}}</strong> ha preparat la teva recepta i ha compartit una foto del seu plat.</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">Veure Foto</a>
+    `,
+		"en": `
+        <h2>Someone cooked your recipe! 📸</h2>
+        <p>Hi there,</p>
+        <p><strong>{{.Metadata.authorName}}</strong> made your recipe and shared a photo of their dish.</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">See Photo</a>
+    `,
+	},
 	models.TypeNewLike: {
 		"es": `
         <h2>¡Alguien le ha dado like a tu receta!</h2>
@@ -380,6 +400,11 @@ var emailSubjects = map[models.NotificationType]map[string]string{
 		"ca": "Nou Comentari a la teva Recepta - Jorbites",
 		"en": "New Comment on Your Recipe - Jorbites",
 	},
+	models.TypeNewCooksnap: {
+		"es": "¡Han preparado tu receta! - Jorbites",
+		"ca": "Han preparat la teva recepta! - Jorbites",
+		"en": "Someone Cooked Your Recipe! - Jorbites",
+	},
 	models.TypeNewLike: {
 		"es": "Nuevo Like en tu Receta - Jorbites",
 		"ca": "Nou Like a la teva Recepta - Jorbites",
@@ -601,6 +626,26 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 				return PushNotificationTexts{Title: "Nuevo Comentario", Message: authorName + " ha comentado en tu receta"}
 			}
 			return PushNotificationTexts{Title: "Nuevo Comentario", Message: "Nuevo comentario en tu receta"}
+		}
+
+	case models.TypeNewCooksnap:
+		authorName := metadata["authorName"]
+		switch language {
+		case "ca":
+			if authorName != "" {
+				return PushNotificationTexts{Title: "Han cuinat la teva recepta!", Message: authorName + " ha cuinat la teva recepta! Mira la seva foto"}
+			}
+			return PushNotificationTexts{Title: "Han cuinat la teva recepta!", Message: "Algú ha cuinat la teva recepta! Mira la seva foto"}
+		case "en":
+			if authorName != "" {
+				return PushNotificationTexts{Title: "Recipe Cooked!", Message: authorName + " cooked your recipe! See their photo"}
+			}
+			return PushNotificationTexts{Title: "Recipe Cooked!", Message: "Someone cooked your recipe! See their photo"}
+		default: // es
+			if authorName != "" {
+				return PushNotificationTexts{Title: "¡Han cocinado tu receta!", Message: authorName + " ha cocinado tu receta! Mira su foto"}
+			}
+			return PushNotificationTexts{Title: "¡Han cocinado tu receta!", Message: "¡Alguien ha cocinado tu receta! Mira su foto"}
 		}
 
 	case models.TypeNotificationsActivated:

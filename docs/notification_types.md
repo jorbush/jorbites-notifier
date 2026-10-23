@@ -307,13 +307,35 @@ Broadcast sent when a Top Recipe voting session is closed, announcing the winner
 }
 ```
 
+### NEW_COOKSNAP
+
+Sent to the recipe author when a community member prepares their recipe and shares a photo ("I Made This!" / Cooksnap).
+
+**Metadata Fields**:
+- `userName`: Name of the user who prepared the recipe
+- `recipeId`: ID of the cooked recipe
+- `recipeName`: Title of the cooked recipe
+
+**Example**:
+```json
+{
+  "type": "NEW_COOKSNAP",
+  "recipient": "author@example.com",
+  "metadata": {
+    "userName": "Chef Mario",
+    "recipeId": "67890",
+    "recipeName": "Delicious Carbonara"
+  }
+}
+```
+
 ## Notification Preference Categories
 
 Users can toggle notification preferences per category in the main app. Before dispatching any email or push notification, Jorbites Notifier evaluates `user.IsNotificationCategoryEnabled(type)`.
 
 | Category Key | Notification Types Included | Default |
 |---|---|---|
-| `social` | `NEW_LIKE`, `NEW_COMMENT`, `MENTION_IN_COMMENT` | Enabled |
+| `social` | `NEW_LIKE`, `NEW_COMMENT`, `MENTION_IN_COMMENT`, `NEW_COOKSNAP` | Enabled |
 | `newContent` | `NEW_RECIPE`, `NEW_BLOG` | Enabled |
 | `eventsAndChallenges` | `NEW_EVENT`, `EVENT_ENDING_SOON`, `NEW_CHALLENGE` | Enabled |
 | `quests` | `NEW_QUEST`, `QUEST_FULFILLED` | Enabled |
