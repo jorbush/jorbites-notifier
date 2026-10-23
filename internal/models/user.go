@@ -31,7 +31,7 @@ func (u *User) IsNotificationCategoryEnabled(notifType NotificationType) bool {
 	prefs := u.NotificationPreferences
 
 	switch notifType {
-	case TypeNewLike, TypeNewComment, TypeMentionInComment:
+	case TypeNewLike, TypeNewComment, TypeMentionInComment, TypeNewCooksnap:
 		if prefs.Social != nil {
 			return *prefs.Social
 		}

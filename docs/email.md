@@ -55,6 +55,7 @@ The email service supports the following notification types:
 14. **VERIFIED**: Sent to a user when they reach 30 recipes and their profile becomes verified.
 15. **NEW_VOTATION**: Sent to announce the opening of a new Recipe of the Week/Month/Year voting poll (broadcast).
 16. **VOTATION_RESULT**: Sent to announce the winning recipe and author of the Recipe of the Week/Month/Year voting poll (broadcast).
+17. **NEW_COOKSNAP**: Sent to recipe authors when a community member prepares their recipe and shares a dish photo.
 
 Each notification type has its own localized subject lines and HTML body templates (available in English, Spanish, and Catalan) while maintaining a consistent overall layout.
 

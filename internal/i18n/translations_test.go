@@ -62,6 +62,7 @@ func TestGetUserLanguage(t *testing.T) {
 func TestGetEmailTemplateContent(t *testing.T) {
 	notificationTypes := []models.NotificationType{
 		models.TypeNewComment,
+		models.TypeNewCooksnap,
 		models.TypeNewLike,
 		models.TypeNewRecipe,
 		models.TypeNotificationsActivated,
@@ -108,6 +109,7 @@ func TestGetEmailTemplateContentFallback(t *testing.T) {
 func TestGetEmailSubject(t *testing.T) {
 	notificationTypes := []models.NotificationType{
 		models.TypeNewComment,
+		models.TypeNewCooksnap,
 		models.TypeNewLike,
 		models.TypeNewRecipe,
 		models.TypeNotificationsActivated,
@@ -253,6 +255,30 @@ func TestGetPushNotificationText(t *testing.T) {
 		{
 			name:      "TypeNewComment - English",
 			notifType: models.TypeNewComment,
+			lang:      "en",
+			metadata:  map[string]string{"authorName": "Jane"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeNewCooksnap - Spanish",
+			notifType: models.TypeNewCooksnap,
+			lang:      "es",
+			metadata:  map[string]string{"authorName": "Jane"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeNewCooksnap - Catalan",
+			notifType: models.TypeNewCooksnap,
+			lang:      "ca",
+			metadata:  map[string]string{"authorName": "Jane"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeNewCooksnap - English",
+			notifType: models.TypeNewCooksnap,
 			lang:      "en",
 			metadata:  map[string]string{"authorName": "Jane"},
 			wantTitle: true,
@@ -444,6 +470,7 @@ func TestGetPushNotificationTextFallback(t *testing.T) {
 func TestAllNotificationTypesHaveTranslations(t *testing.T) {
 	notificationTypes := []models.NotificationType{
 		models.TypeNewComment,
+		models.TypeNewCooksnap,
 		models.TypeNewLike,
 		models.TypeNewRecipe,
 		models.TypeNotificationsActivated,

@@ -155,7 +155,7 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		}
 		return success
 
-	case models.TypeNewComment, models.TypeNewLike, models.TypeNotificationsActivated, models.TypeQuestFulfilled:
+	case models.TypeNewComment, models.TypeNewCooksnap, models.TypeNewLike, models.TypeNotificationsActivated, models.TypeQuestFulfilled:
 		// 1. Lookup User first (needed for both Push and Email preference)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -198,6 +198,12 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		case models.TypeNewComment:
 			recipeId := notification.Metadata["recipeId"]
 			pushTexts := i18n.GetPushNotificationText(models.TypeNewComment, language, notification.Metadata)
+			title = pushTexts.Title
+			message = pushTexts.Message
+			url = "/recipes/" + recipeId
+		case models.TypeNewCooksnap:
+			recipeId := notification.Metadata["recipeId"]
+			pushTexts := i18n.GetPushNotificationText(models.TypeNewCooksnap, language, notification.Metadata)
 			title = pushTexts.Title
 			message = pushTexts.Message
 			url = "/recipes/" + recipeId

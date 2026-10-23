@@ -32,7 +32,7 @@ Rather than exposing raw notification types to users, notifications are grouped 
 
 | Category | Field Name | Notification Types Included | Default |
 |---|---|---|---|
-| **Social** | `social` | `NEW_LIKE`, `NEW_COMMENT`, `MENTION_IN_COMMENT` | `true` |
+| **Social** | `social` | `NEW_LIKE`, `NEW_COMMENT`, `MENTION_IN_COMMENT`, `NEW_COOKSNAP` | `true` |
 | **New Content** | `newContent` | `NEW_RECIPE`, `NEW_BLOG` | `true` |
 | **Events & Challenges** | `eventsAndChallenges` | `NEW_EVENT`, `EVENT_ENDING_SOON`, `NEW_CHALLENGE` | `true` |
 | **Quests** | `quests` | `NEW_QUEST`, `QUEST_FULFILLED` | `true` |
