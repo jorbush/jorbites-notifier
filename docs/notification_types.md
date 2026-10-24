@@ -312,7 +312,7 @@ Broadcast sent when a Top Recipe voting session is closed, announcing the winner
 Sent to the recipe author when a community member prepares their recipe and shares a photo ("I Made This!" / Cooksnap).
 
 **Metadata Fields**:
-- `userName`: Name of the user who prepared the recipe
+- `authorName`: Name of the user who prepared the recipe
 - `recipeId`: ID of the cooked recipe
 - `recipeName`: Title of the cooked recipe
 
@@ -322,7 +322,7 @@ Sent to the recipe author when a community member prepares their recipe and shar
   "type": "NEW_COOKSNAP",
   "recipient": "author@example.com",
   "metadata": {
-    "userName": "Chef Mario",
+    "authorName": "Chef Mario",
     "recipeId": "67890",
     "recipeName": "Delicious Carbonara"
   }
