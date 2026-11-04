@@ -76,6 +76,16 @@ func TestIsNotificationCategoryEnabled(t *testing.T) {
 			expected:  false,
 		},
 		{
+			name: "social disabled skips RECIPE_REMIX",
+			user: &User{
+				NotificationPreferences: &NotificationPreferences{
+					Social: boolPtr(false),
+				},
+			},
+			notifType: TypeRecipeRemix,
+			expected:  false,
+		},
+		{
 			name: "social enabled allows NEW_COOKSNAP",
 			user: &User{
 				NotificationPreferences: &NotificationPreferences{
@@ -83,6 +93,16 @@ func TestIsNotificationCategoryEnabled(t *testing.T) {
 				},
 			},
 			notifType: TypeNewCooksnap,
+			expected:  true,
+		},
+		{
+			name: "social enabled allows RECIPE_REMIX",
+			user: &User{
+				NotificationPreferences: &NotificationPreferences{
+					Social: boolPtr(true),
+				},
+			},
+			notifType: TypeRecipeRemix,
 			expected:  true,
 		},
 		{

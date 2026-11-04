@@ -155,7 +155,7 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		}
 		return success
 
-	case models.TypeNewComment, models.TypeNewCooksnap, models.TypeNewLike, models.TypeNotificationsActivated, models.TypeQuestFulfilled:
+	case models.TypeNewComment, models.TypeNewCooksnap, models.TypeNewLike, models.TypeNotificationsActivated, models.TypeQuestFulfilled, models.TypeRecipeRemix:
 		// 1. Lookup User first (needed for both Push and Email preference)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -171,6 +171,34 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 		if !user.IsNotificationCategoryEnabled(notification.Type) {
 			slog.Info("Skipping notification (category disabled)", "recipient", notification.Recipient, "type", notification.Type)
 			return true
+		}
+
+		if notification.Type == models.TypeRecipeRemix && notification.Metadata != nil {
+			if notification.Metadata["authorName"] != "" {
+				notification.Metadata["authorName"] = strings.TrimPrefix(notification.Metadata["authorName"], "@")
+			}
+			if notification.Metadata["authorName"] == "" {
+				switch language {
+				case "ca":
+					notification.Metadata["authorName"] = "un_usuari"
+				case "en":
+					notification.Metadata["authorName"] = "a_cook"
+				default:
+					notification.Metadata["authorName"] = "un_usuario"
+				}
+			}
+			if notification.Metadata["remixRecipeId"] == "" && notification.Metadata["recipeId"] != "" {
+				notification.Metadata["remixRecipeId"] = notification.Metadata["recipeId"]
+			}
+			if notification.Metadata["recipeId"] == "" && notification.Metadata["remixRecipeId"] != "" {
+				notification.Metadata["recipeId"] = notification.Metadata["remixRecipeId"]
+			}
+			if notification.Metadata["originalRecipeTitle"] == "" && notification.Metadata["recipeName"] != "" {
+				notification.Metadata["originalRecipeTitle"] = notification.Metadata["recipeName"]
+			}
+			if notification.Metadata["recipeName"] == "" && notification.Metadata["originalRecipeTitle"] != "" {
+				notification.Metadata["recipeName"] = notification.Metadata["originalRecipeTitle"]
+			}
 		}
 
 		success := true
@@ -207,6 +235,15 @@ func (q *Queue) processNotificationByType(notification models.Notification) bool
 			title = pushTexts.Title
 			message = pushTexts.Message
 			url = "/recipes/" + recipeId
+		case models.TypeRecipeRemix:
+			remixRecipeId := notification.Metadata["remixRecipeId"]
+			if remixRecipeId == "" {
+				remixRecipeId = notification.Metadata["recipeId"]
+			}
+			pushTexts := i18n.GetPushNotificationText(models.TypeRecipeRemix, language, notification.Metadata)
+			title = pushTexts.Title
+			message = pushTexts.Message
+			url = "/recipes/" + remixRecipeId
 		case models.TypeNotificationsActivated:
 			pushTexts := i18n.GetPushNotificationText(models.TypeNotificationsActivated, language, notification.Metadata)
 			title = pushTexts.Title
