@@ -1,6 +1,10 @@
 package i18n
 
-import "github.com/jorbush/jorbites-notifier/internal/models"
+import (
+	"strings"
+
+	"github.com/jorbush/jorbites-notifier/internal/models"
+)
 
 func GetUserLanguage(user *models.User) string {
 	if user.Language != nil && *user.Language != "" {
@@ -48,6 +52,26 @@ var emailTemplateContent = map[models.NotificationType]map[string]string{
         <p>Hi there,</p>
         <p><strong>{{.Metadata.authorName}}</strong> made your recipe and shared a photo of their dish.</p>
         <a href="{{.SiteURL}}/recipes/{{.Metadata.recipeId}}" class="button">See Photo</a>
+    `,
+	},
+	models.TypeRecipeRemix: {
+		"es": `
+        <h2>¡Han publicado un remix de tu receta! 🍴</h2>
+        <p>Hola,</p>
+        <p><strong>@{{.Metadata.authorName}}</strong> ha publicado un nuevo remix de tu receta <strong>{{.Metadata.originalRecipeTitle}}</strong>.</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.remixRecipeId}}" class="button">Ver Remix</a>
+    `,
+		"ca": `
+        <h2>Han publicat una remescla de la teva recepta! 🍴</h2>
+        <p>Hola,</p>
+        <p><strong>@{{.Metadata.authorName}}</strong> ha publicat una nova remescla de la teva recepta <strong>{{.Metadata.originalRecipeTitle}}</strong>.</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.remixRecipeId}}" class="button">Veure Remescla</a>
+    `,
+		"en": `
+        <h2>Someone remixed your recipe! 🍴</h2>
+        <p>Hi there,</p>
+        <p><strong>@{{.Metadata.authorName}}</strong> published a remix of your recipe <strong>{{.Metadata.originalRecipeTitle}}</strong>.</p>
+        <a href="{{.SiteURL}}/recipes/{{.Metadata.remixRecipeId}}" class="button">View Remix</a>
     `,
 	},
 	models.TypeNewLike: {
@@ -405,6 +429,11 @@ var emailSubjects = map[models.NotificationType]map[string]string{
 		"ca": "Han preparat la teva recepta! - Jorbites",
 		"en": "Someone Cooked Your Recipe! - Jorbites",
 	},
+	models.TypeRecipeRemix: {
+		"es": "¡Han publicado un remix de tu receta! - Jorbites",
+		"ca": "Han publicat una remescla de la teva recepta! - Jorbites",
+		"en": "Someone Published a Remix of Your Recipe! - Jorbites",
+	},
 	models.TypeNewLike: {
 		"es": "Nuevo Like en tu Receta - Jorbites",
 		"ca": "Nou Like a la teva Recepta - Jorbites",
@@ -646,6 +675,57 @@ func GetPushNotificationText(notificationType models.NotificationType, language 
 				return PushNotificationTexts{Title: "¡Han cocinado tu receta!", Message: authorName + " ha cocinado tu receta! Mira su foto"}
 			}
 			return PushNotificationTexts{Title: "¡Han cocinado tu receta!", Message: "¡Alguien ha cocinado tu receta! Mira su foto"}
+		}
+
+	case models.TypeRecipeRemix:
+		authorName := metadata["authorName"]
+		if authorName != "" && !strings.HasPrefix(authorName, "@") {
+			authorName = "@" + authorName
+		}
+		originalTitle := metadata["originalRecipeTitle"]
+		if originalTitle == "" {
+			originalTitle = metadata["recipeName"]
+		}
+		switch language {
+		case "ca":
+			if authorName != "" {
+				msg := "Ha publicat una remescla de la teva recepta"
+				if originalTitle != "" {
+					msg = msg + ": " + originalTitle
+				}
+				return PushNotificationTexts{Title: authorName + " ha publicat una remescla de la teva recepta!", Message: msg}
+			}
+			msg := "Han publicat una remescla de la teva recepta"
+			if originalTitle != "" {
+				msg = msg + ": " + originalTitle
+			}
+			return PushNotificationTexts{Title: "Han publicat una remescla de la teva recepta!", Message: msg}
+		case "en":
+			if authorName != "" {
+				msg := "Published a remix of your recipe"
+				if originalTitle != "" {
+					msg = msg + ": " + originalTitle
+				}
+				return PushNotificationTexts{Title: authorName + " published a remix of your recipe!", Message: msg}
+			}
+			msg := "Someone published a remix of your recipe"
+			if originalTitle != "" {
+				msg = msg + ": " + originalTitle
+			}
+			return PushNotificationTexts{Title: "Someone published a remix of your recipe!", Message: msg}
+		default: // es
+			if authorName != "" {
+				msg := "Ha publicado un remix de tu receta"
+				if originalTitle != "" {
+					msg = msg + ": " + originalTitle
+				}
+				return PushNotificationTexts{Title: authorName + " ha publicado un remix de tu receta!", Message: msg}
+			}
+			msg := "Han publicado un remix de tu receta"
+			if originalTitle != "" {
+				msg = msg + ": " + originalTitle
+			}
+			return PushNotificationTexts{Title: "¡Han publicado un remix de tu receta!", Message: msg}
 		}
 
 	case models.TypeNotificationsActivated:

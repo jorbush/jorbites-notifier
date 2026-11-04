@@ -329,13 +329,35 @@ Sent to the recipe author when a community member prepares their recipe and shar
 }
 ```
 
+### RECIPE_REMIX
+
+Sent to the original recipe author when a community member publishes a variation/remix of their recipe.
+
+**Metadata Fields**:
+- `authorName`: Name / handle of the user who published the remix
+- `remixRecipeId` (or `recipeId`): ID of the newly published remix recipe
+- `originalRecipeTitle` (or `recipeName`): Title of the original recipe
+
+**Example**:
+```json
+{
+  "type": "RECIPE_REMIX",
+  "recipient": "author@example.com",
+  "metadata": {
+    "authorName": "Chef Mario",
+    "remixRecipeId": "12345",
+    "originalRecipeTitle": "Grandma's Apple Pie"
+  }
+}
+```
+
 ## Notification Preference Categories
 
 Users can toggle notification preferences per category in the main app. Before dispatching any email or push notification, Jorbites Notifier evaluates `user.IsNotificationCategoryEnabled(type)`.
 
 | Category Key | Notification Types Included | Default |
 |---|---|---|
-| `social` | `NEW_LIKE`, `NEW_COMMENT`, `MENTION_IN_COMMENT`, `NEW_COOKSNAP` | Enabled |
+| `social` | `NEW_LIKE`, `NEW_COMMENT`, `MENTION_IN_COMMENT`, `NEW_COOKSNAP`, `RECIPE_REMIX` | Enabled |
 | `newContent` | `NEW_RECIPE`, `NEW_BLOG` | Enabled |
 | `eventsAndChallenges` | `NEW_EVENT`, `EVENT_ENDING_SOON`, `NEW_CHALLENGE` | Enabled |
 | `quests` | `NEW_QUEST`, `QUEST_FULFILLED` | Enabled |

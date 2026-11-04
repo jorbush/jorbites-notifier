@@ -63,6 +63,7 @@ func TestGetEmailTemplateContent(t *testing.T) {
 	notificationTypes := []models.NotificationType{
 		models.TypeNewComment,
 		models.TypeNewCooksnap,
+		models.TypeRecipeRemix,
 		models.TypeNewLike,
 		models.TypeNewRecipe,
 		models.TypeNotificationsActivated,
@@ -110,6 +111,7 @@ func TestGetEmailSubject(t *testing.T) {
 	notificationTypes := []models.NotificationType{
 		models.TypeNewComment,
 		models.TypeNewCooksnap,
+		models.TypeRecipeRemix,
 		models.TypeNewLike,
 		models.TypeNewRecipe,
 		models.TypeNotificationsActivated,
@@ -281,6 +283,38 @@ func TestGetPushNotificationText(t *testing.T) {
 			notifType: models.TypeNewCooksnap,
 			lang:      "en",
 			metadata:  map[string]string{"authorName": "Jane"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeRecipeRemix - Spanish",
+			notifType: models.TypeRecipeRemix,
+			lang:      "es",
+			metadata:  map[string]string{"authorName": "ChefJane", "originalRecipeTitle": "Tarta de Manzana"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeRecipeRemix - Catalan",
+			notifType: models.TypeRecipeRemix,
+			lang:      "ca",
+			metadata:  map[string]string{"authorName": "ChefJane", "originalRecipeTitle": "Pastís de Poma"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeRecipeRemix - English",
+			notifType: models.TypeRecipeRemix,
+			lang:      "en",
+			metadata:  map[string]string{"authorName": "ChefJane", "originalRecipeTitle": "Apple Pie"},
+			wantTitle: true,
+			wantMsg:   true,
+		},
+		{
+			name:      "TypeRecipeRemix - English already prefixed with @",
+			notifType: models.TypeRecipeRemix,
+			lang:      "en",
+			metadata:  map[string]string{"authorName": "@ChefJane", "recipeName": "Apple Pie"},
 			wantTitle: true,
 			wantMsg:   true,
 		},
@@ -471,6 +505,7 @@ func TestAllNotificationTypesHaveTranslations(t *testing.T) {
 	notificationTypes := []models.NotificationType{
 		models.TypeNewComment,
 		models.TypeNewCooksnap,
+		models.TypeRecipeRemix,
 		models.TypeNewLike,
 		models.TypeNewRecipe,
 		models.TypeNotificationsActivated,
@@ -689,6 +724,28 @@ func TestGetPushNotificationTextEventTranslations(t *testing.T) {
 		ca := GetPushNotificationText(models.TypeEventEndingSoon, "ca", metadata)
 		if ca.Title != "L'Esdeveniment Acaba Aviat!" || ca.Message != "Festa Mexicana acaba en 3 dies" {
 			t.Errorf("Unexpected Catalan push: %+v", ca)
+		}
+	})
+
+	t.Run("TypeRecipeRemix push translations", func(t *testing.T) {
+		remixMetadata := map[string]string{
+			"authorName":          "ChefMario",
+			"originalRecipeTitle": "Grandma's Apple Pie",
+		}
+
+		en := GetPushNotificationText(models.TypeRecipeRemix, "en", remixMetadata)
+		if en.Title != "@ChefMario published a remix of your recipe!" {
+			t.Errorf("Unexpected English push title: %s", en.Title)
+		}
+
+		es := GetPushNotificationText(models.TypeRecipeRemix, "es", remixMetadata)
+		if es.Title != "@ChefMario ha publicado un remix de tu receta!" {
+			t.Errorf("Unexpected Spanish push title: %s", es.Title)
+		}
+
+		ca := GetPushNotificationText(models.TypeRecipeRemix, "ca", remixMetadata)
+		if ca.Title != "@ChefMario ha publicat una remescla de la teva recepta!" {
+			t.Errorf("Unexpected Catalan push title: %s", ca.Title)
 		}
 	})
 }

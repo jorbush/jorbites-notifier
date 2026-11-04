@@ -12,6 +12,7 @@ type NotificationType string
 const (
 	TypeNewComment             NotificationType = "NEW_COMMENT"
 	TypeNewCooksnap            NotificationType = "NEW_COOKSNAP"
+	TypeRecipeRemix            NotificationType = "RECIPE_REMIX"
 	TypeNewLike                NotificationType = "NEW_LIKE"
 	TypeNewRecipe              NotificationType = "NEW_RECIPE"
 	TypeNotificationsActivated NotificationType = "NOTIFICATIONS_ACTIVATED"
