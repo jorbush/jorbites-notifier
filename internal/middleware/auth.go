@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"crypto/subtle"
 	"log/slog"
 	"net/http"
 	"os"
@@ -26,7 +27,7 @@ func RequireAPIKey(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "API key is missing", http.StatusUnauthorized)
 			return
 		}
-		if key != apiKey {
+		if subtle.ConstantTimeCompare([]byte(key), []byte(apiKey)) != 1 {
 			http.Error(w, "Invalid API key", http.StatusUnauthorized)
 			return
 		}

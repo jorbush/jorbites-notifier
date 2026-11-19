@@ -56,8 +56,22 @@ curl -X POST http://your-server/notifications \
 ### Authentication Responses
 
 - Missing API Key: Returns `401 Unauthorized` with message "API key is missing"
-- Invalid API Key: Returns `401 Unauthorized` with message "Invalid API key"
+- Invalid API Key: Returns `401 Unauthorized` with message "Invalid API key" (verified using `crypto/subtle.ConstantTimeCompare`)
 - Valid API Key: Proceeds with the requested operation
+
+## Defense-in-Depth Controls
+
+### Web Push Endpoint SSRF Protection
+
+Before sending outbound Web Push HTTP requests, `push.ValidatePushEndpoint` enforces that every subscription endpoint:
+- Uses the `https` scheme
+- Contains no embedded credentials (`userinfo`) or custom ports
+- Resolves to a domain name (raw IP literals such as `169.254.169.254` or `127.0.0.1` are rejected)
+- Matches an allowlisted Web Push provider host (`fcm.googleapis.com`, `android.googleapis.com`, `updates.push.services.mozilla.com`, `*.push.apple.com`, `*.notify.windows.com`, `*.push.services.mozilla.com`, `*.push.samsungosp.com`)
+
+### Email Template HTML Auto-Escaping
+
+Notification emails are rendered using Go's `html/template` package rather than `text/template`. All dynamic `metadata` values (such as usernames, recipe titles, and comments) are automatically HTML-escaped before insertion into trusted layout templates, preventing HTML injection and email phishing.
 
 ## Security Best Practices
 
