@@ -3,7 +3,7 @@ package email
 import (
 	"bytes"
 	"fmt"
-	"text/template"
+	"html/template"
 	"time"
 
 	"github.com/jorbush/jorbites-notifier/internal/i18n"
@@ -110,8 +110,8 @@ type TemplateData struct {
 	SiteURL     string
 	LogoURL     string
 	CurrentYear int
-	Content     string
-	Footer      string
+	Content     template.HTML
+	Footer      template.HTML
 	Metadata    map[string]string
 }
 
@@ -141,7 +141,7 @@ func GetEmailTemplate(notificationType models.NotificationType, metadata map[str
 		return "", "", err
 	}
 
-	data.Content = contentBuf.String()
+	data.Content = template.HTML(contentBuf.String())
 
 	footerTemplate := i18n.GetBaseTemplateFooter(language)
 	footerTmpl, err := template.New("footer").Parse(footerTemplate)
@@ -154,7 +154,7 @@ func GetEmailTemplate(notificationType models.NotificationType, metadata map[str
 		return "", "", err
 	}
 
-	data.Footer = footerBuf.String()
+	data.Footer = template.HTML(footerBuf.String())
 
 	baseTmpl, err := template.New("base").Parse(BaseTemplate)
 	if err != nil {
